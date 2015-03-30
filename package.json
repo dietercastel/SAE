@@ -1,0 +1,24 @@
+{
+  "name": "Sec-Angular-Express",
+  "version": "0.0.0",
+  "description": "Module to provide an easier secure setup for express+angular applications.",
+  "main": "SAE.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "express",
+    "angular",
+    "security",
+    "csp"
+  ],
+  "author": "Dieter Castel",
+  "license": "ISC",
+  "devDependencies": {
+    "fs": "0.0.2",
+    "content-security-policy": "^0.2.0"
+  },
+  "dependencies": {
+    "jsonfile": "^2.0.0"
+  }
+}
