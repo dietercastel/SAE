@@ -19,6 +19,7 @@
     "content-security-policy": "^0.2.0"
   },
   "dependencies": {
-    "jsonfile": "^2.0.0"
+    "jsonfile": "^2.0.0",
+    "morgan": "^1.5.2"
   }
 }
