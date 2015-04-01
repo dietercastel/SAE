@@ -45,6 +45,10 @@ morgan.token('cspreport', function(req, res){
 
 //Use the content-security-policy middleware
 function useCSP(cspopt,opt){
+	//TODO: see if this is necessary
+	//Probably needed with all srcs
+	// cspopt["default-src"] = csp.SRC_NONE; 
+	cspopt["connect-src"] = csp.SRC_SELF; 
 	cspopt["report-uri"] = opt["proxyPrefix"] + opt["reportRoute"];
 	console.log("CSP: using following configuration:");
 	console.log(util.inspect(cspopt));
@@ -70,11 +74,36 @@ function configureCsp(app, bodyParser, opt){
 	app.use(useCSP(cspopt,opt));
 }
 
+
+//MISC
+//This function intercepts res.send()
+//When a json body is about to be send
+//The countermeasure string ")]}',\n" is added in front of it
+//then the normal send function is executed.
+function addJSONPCM(req, res, next){
+
+	var sendRef = res.send;
+	res.send = function(str){
+		var newStr = str;
+		try {
+			JSON.parse(str);
+			console.log("ADDING");
+			newStr = ")]}',\n"+str;
+		} catch (e) {
+			//nop
+		}
+		console.log(newStr);
+		sendRef.call(this,newStr);
+	}
+	next();
+}
+
 module.exports = function(myoptions) {
 	var def= getDefaults();
 	var opt= overrideDefaults(def, myoptions); 
 	return {
 		configure: function(app,bodyParser){
+			app.use(addJSONPCM);
 			configureCsp(app,bodyParser,opt);
 		},
 			defaults: def,
