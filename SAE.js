@@ -5,6 +5,7 @@ var jf = require('jsonfile');
 var util = require('util');
 var path = require('path');
 var morgan = require('morgan');
+var cookieParser = require('cookie-parser');
 
 //SETTINGS AND OPTIONS RELATED
 var requiredOptions = ["projectPath"];
@@ -74,6 +75,45 @@ function configureCsp(app, bodyParser, opt){
 	app.use(useCSP(cspopt,opt));
 }
 
+// Implementation for anti XSRF/CSRF double submit cookie.
+function setXSRFToken(){
+	//TODO make a real random token.
+	var randomtoken = "NOTARANDOMTOKEN";
+	console.log("SETTING anti XSRF TOKEN");
+	return this.append('Set-Cookie', 'XSRF-TOKEN='+randomtoken+'; Path=/; HttpOnly');
+}
+
+// Implementation for anti XSRF/CSRF double submit cookie.
+function unsetXSRFToken(){
+	//TODO
+	console.log("UNSETTING anti XSRF TOKEN");
+}
+
+
+//If the token was not found within the request or the value provided does not match the value within the session, then the request should be aborted, token should be reset and the event logged as a potential CSRF attack in progress. 
+/*
+ * Returns 
+ *	False if the request doesn't have a valid
+ *		XSRF token set.
+ *	True if the token is valid.
+ */
+function validateXSRFToken(){
+	var token = this.get('X-XSRF-TOKEN');
+	var tokenCookie = this.cookies["XSRF-TOKEN"];
+	console.log(token);
+	console.log(tokenCookie);
+	if(token === undefined || tokenCookie ===undefined){
+		console.log("FALSE");
+		return false;
+	}
+	if(token === tokenCookie){
+		console.log("TRUE");
+		return true;	
+	}
+	console.log("FALSE");
+	return false;
+}
+
 
 //MISC
 //This function intercepts res.send()
@@ -81,20 +121,25 @@ function configureCsp(app, bodyParser, opt){
 //The countermeasure string ")]}',\n" is added in front of it
 //then the normal send function is executed.
 function addJSONPCM(req, res, next){
-
 	var sendRef = res.send;
 	res.send = function(str){
 		var newStr = str;
 		try {
 			JSON.parse(str);
-			console.log("ADDING");
+			// console.log("ADDING");
 			newStr = ")]}',\n"+str;
 		} catch (e) {
 			//nop
 		}
-		console.log(newStr);
+		// console.log(newStr);
 		sendRef.call(this,newStr);
 	}
+	next();
+}
+
+function addFuctions(req, res, next){
+	req.valToken = validateXSRFToken;
+	res.setToken = setXSRFToken;
 	next();
 }
 
@@ -103,10 +148,11 @@ module.exports = function(myoptions) {
 	var opt= overrideDefaults(def, myoptions); 
 	return {
 		configure: function(app,bodyParser){
+			app.use(addFuctions);
 			app.use(addJSONPCM);
 			configureCsp(app,bodyParser,opt);
 		},
 			defaults: def,
-			options: opt 
+			options: opt
 	};
 };
