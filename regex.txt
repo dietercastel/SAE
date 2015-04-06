@@ -1,0 +1,18 @@
+Make NodeUnit test out of this
+/^(?!\/$|notthis(\/.*)*$|orthis(\/.*)*$).+/igm
+Sample text for testing:
+SHOULD NOT WORK:
+notthis
+orthis
+/
+notthis
+orthis/anything
+notthis/
+
+WORKING:
+/this
+/andthis
+dieterd/dietr
+/my/extra/long/route/notthis/
+/my/extra/long/route/orthis/
+

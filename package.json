@@ -15,8 +15,8 @@
   "author": "Dieter Castel",
   "license": "ISC",
   "devDependencies": {
-    "fs": "0.0.2",
-    "content-security-policy": "^0.2.0"
+    "content-security-policy": "^0.2.0",
+    "grunt": "^0.4.5"
   },
   "dependencies": {
     "jsonfile": "^2.0.0",

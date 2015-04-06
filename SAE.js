@@ -1,4 +1,5 @@
 //Requires
+var crypto = require('crypto');
 var fs = require('fs');
 var csp = require('content-security-policy');
 var jf = require('jsonfile');
@@ -12,9 +13,11 @@ var requiredOptions = ["projectPath"];
 function getDefaults(){
 	return { 
 		reportRoute : '/reporting',
+		reportOnly : false,
 		proxyPrefix : '', 
 		cspFile: '/csp.json',
 		cspReports : '/cspReports.log',
+		useJSONPCM: true,
 		projectPath: undefined
 	};
 }
@@ -51,8 +54,12 @@ function useCSP(cspopt,opt){
 	// cspopt["default-src"] = csp.SRC_NONE; 
 	cspopt["connect-src"] = csp.SRC_SELF; 
 	cspopt["report-uri"] = opt["proxyPrefix"] + opt["reportRoute"];
+	cspopt["report-only"] = opt["reportOnly"];
 	console.log("CSP: using following configuration:");
 	console.log(util.inspect(cspopt));
+	if(opt["reportOnly"]){
+		console.log("CSP: Report only mode on. This is NOT recommended.");
+	}
 	return csp.getCSP(cspopt);
 }
 
@@ -78,9 +85,16 @@ function configureCsp(app, bodyParser, opt){
 // Implementation for anti XSRF/CSRF double submit cookie.
 function setXSRFToken(){
 	//TODO make a real random token.
-	var randomtoken = "NOTARANDOMTOKEN";
+	// var randomtoken = "NOTARANDOMTOKEN";
+	try{
+		var buf = crypto.randomBytes(256);
+		var randomtoken = buf.toString('base64');
+	} catch(ex) { 
+		console.log("Entropy sources drained.");
+		throw ex;
+	}
 	console.log("SETTING anti XSRF TOKEN");
-	return this.append('Set-Cookie', 'XSRF-TOKEN='+randomtoken+'; Path=/; HttpOnly');
+	return this.append('Set-Cookie', 'XSRF-TOKEN='+randomtoken+'; Path=/');
 }
 
 // Implementation for anti XSRF/CSRF double submit cookie.
@@ -97,21 +111,24 @@ function unsetXSRFToken(){
  *		XSRF token set.
  *	True if the token is valid.
  */
-function validateXSRFToken(){
+function validateXSRFToken(res, validFunction, invalidFunction){
 	var token = this.get('X-XSRF-TOKEN');
 	var tokenCookie = this.cookies["XSRF-TOKEN"];
-	console.log(token);
-	console.log(tokenCookie);
+	console.log("Header token: "+token);
+	console.log("Cookie token: "+tokenCookie);
 	if(token === undefined || tokenCookie ===undefined){
 		console.log("FALSE");
-		return false;
+		invalidFunction(res);
+		return;
 	}
 	if(token === tokenCookie){
 		console.log("TRUE");
-		return true;	
+		validFunction(this, this.next);
+		return;	
 	}
 	console.log("FALSE");
-	return false;
+	invalidFunction(res);
+	return;
 }
 
 
@@ -148,8 +165,9 @@ module.exports = function(myoptions) {
 	var opt= overrideDefaults(def, myoptions); 
 	return {
 		configure: function(app,bodyParser){
-			app.use(addFuctions);
+			app.use(cookieParser());
 			app.use(addJSONPCM);
+			app.use(addFuctions);
 			configureCsp(app,bodyParser,opt);
 		},
 			defaults: def,
