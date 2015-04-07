@@ -65,7 +65,7 @@ function useCSP(cspopt,opt){
 
 function configureCsp(app, bodyParser, opt){
 	var cspLogPath = path.join(opt["projectPath"],opt["cspReports"]);
-	var cspLogStream = fs.createWriteStream(cspLogPath, {flags: 'a'})
+	var cspLogStream = fs.createWriteStream(cspLogPath, {flags: 'a'});
 	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
 	//Set routes FIRST before doing sync file read.
 	app.post(opt["reportRoute"], cspReportParser, morgan(':date[clf]] :cspreport', {stream : cspLogStream}));
@@ -89,12 +89,12 @@ function setXSRFToken(){
 	try{
 		var buf = crypto.randomBytes(256);
 		var randomtoken = buf.toString('base64');
+		console.log("SETTING anti XSRF TOKEN");
+		return this.append('Set-Cookie', 'XSRF-TOKEN='+randomtoken+'; Path=/');
 	} catch(ex) { 
 		console.log("Entropy sources drained.");
 		throw ex;
 	}
-	console.log("SETTING anti XSRF TOKEN");
-	return this.append('Set-Cookie', 'XSRF-TOKEN='+randomtoken+'; Path=/');
 }
 
 // Implementation for anti XSRF/CSRF double submit cookie.
@@ -150,7 +150,7 @@ function addJSONPCM(req, res, next){
 		}
 		// console.log(newStr);
 		sendRef.call(this,newStr);
-	}
+	};
 	next();
 }
 
