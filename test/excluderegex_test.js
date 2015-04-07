@@ -49,7 +49,7 @@ exports.excluderegex = {
 	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
 
 	testarray.forEach(function(item){
-		test.equal(item.match(regex).length, 1, "Each string should have exactly ONE match. \n "+item+"\n"+regex);
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
 	});
 	test.done();
   },
@@ -75,7 +75,8 @@ exports.excluderegex = {
 	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
 
 	testarray.forEach(function(item){
-		test.equal(item.match(regex), undefined, "None of the strings should EVER match! \n "+item+"\n"+regex);
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
 	});
 	test.done();
   },
@@ -100,7 +101,8 @@ exports.excluderegex = {
 	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
 
 	testarray.forEach(function(item){
-		test.equal(item.match(regex), undefined, "None of the strings should EVER match! \n "+item+"\n"+regex);
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
 	});
 	test.done();
   },
@@ -120,7 +122,7 @@ exports.excluderegex = {
 	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
 
 	testarray.forEach(function(item){
-		test.equal(item.match(regex).length, 1, "Each string should have exactly ONE match. \n "+item+"\n"+regex);
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
 	});
 	test.done();
   },
@@ -148,17 +150,17 @@ exports.excluderegex = {
 		"northis/anything",
 		"/northis/anything",
 		"/northis/anything/"];
-    // test.expect(includeArray.length);
     test.expect(includeArray.length + excludeArray.length);
 
 	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
 
 	includeArray.forEach(function(item){
-		test.equal(item.match(regex).length, 1, "Each string should have exactly ONE match. \n "+item+"\n"+regex);
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
 	});
 
 	excludeArray.forEach(function(item){
-		test.equal(item.match(regex), null, "None of the strings should EVER match! \n "+item+"\n"+regex);
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
 	});
 	test.done();
   },
@@ -191,11 +193,12 @@ exports.excluderegex = {
 	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
 
 	includeArray.forEach(function(item){
-		test.equal(item.match(regex).length, 1, "Each string should have exactly ONE match. \n "+item+"\n"+regex);
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
 	});
 
 	excludeArray.forEach(function(item){
-		test.equal(item.match(regex), null, "None of the strings should EVER match! \n "+item+"\n"+regex);
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
 	});
 	test.done();
   },
@@ -231,11 +234,12 @@ exports.excluderegex = {
 	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
 
 	includeArray.forEach(function(item){
-		test.equal(item.match(regex).length, 1, "Each string should have exactly ONE match. \n "+item+"\n"+regex);
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
 	});
 
 	excludeArray.forEach(function(item){
-		test.equal(item.match(regex), null, "None of the strings should EVER match! \n "+item+"\n"+regex);
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
 	});
 	test.done();
   },
@@ -272,11 +276,97 @@ exports.excluderegex = {
 	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
 
 	includeArray.forEach(function(item){
-		test.equal(item.match(regex).length, 1, "Each string should have exactly ONE match. \n "+item+"\n"+regex);
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
 	});
 
 	excludeArray.forEach(function(item){
-		test.equal(item.match(regex), null, "None of the strings should EVER match! \n "+item+"\n"+regex);
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
+	});
+	test.done();
+  },
+  noExclusions_excludeRoot: function(test){
+	var excludeRoutes = [];
+	var excludeRoot = true;
+	var includeArray = 
+		["/this",
+		"/andthis",
+		"/thisisok",
+		"/thistoo/too",
+		"/my/extra/long/route/notthis/",
+		"/my/extra/long/route/northis",
+		"notthis",
+		"/notthis",
+		"//notthis",
+		"/notthis/",
+		"northis",
+		"/northis",
+		"/northis/",
+		"//northis/",
+		"notthis/anything",
+		"/notthis/anything",
+		"//notthis/anything",
+		"/notthis/anything/",
+		"//notthis/anything/",
+		"northis/anything",
+		"/northis/anything",
+		"/northis/anything/"];
+	var excludeArray = 
+		["/"];
+    test.expect(includeArray.length + excludeArray.length);
+
+	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
+
+	includeArray.forEach(function(item){
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
+	});
+
+	excludeArray.forEach(function(item){
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
+	});
+	test.done();
+  },
+  noExclusions_includeRoot: function(test){
+	var excludeRoutes = [];
+	var excludeRoot = false;
+	var includeArray = 
+		["/",
+		"/this",
+		"/andthis",
+		"/thisisok",
+		"/thistoo/too",
+		"/my/extra/long/route/notthis/",
+		"/my/extra/long/route/northis",
+		"notthis",
+		"/notthis",
+		"//notthis",
+		"/notthis/",
+		"northis",
+		"/northis",
+		"/northis/",
+		"//northis/",
+		"notthis/anything",
+		"/notthis/anything",
+		"//notthis/anything",
+		"/notthis/anything/",
+		"//notthis/anything/",
+		"northis/anything",
+		"/northis/anything",
+		"/northis/anything/"];
+	var excludeArray = 
+		[];
+    test.expect(includeArray.length + excludeArray.length);
+
+	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
+
+	includeArray.forEach(function(item){
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
+	});
+
+	excludeArray.forEach(function(item){
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
 	});
 	test.done();
   }
