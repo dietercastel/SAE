@@ -200,7 +200,7 @@ exports.excluderegex = {
 	test.done();
   },
   excludeRootDouble : function(test){
-	var excludeRoutes = ["notthis", "northis"];
+	var excludeRoutes = ["/notthis", "//northis"];
 	var excludeRoot = true;
 	var includeArray = 
 		["/this",
@@ -240,7 +240,7 @@ exports.excluderegex = {
 	test.done();
   },
   includeRootDouble : function(test){
-	var excludeRoutes = ["notthis", "northis"];
+	var excludeRoutes = ["//notthis", "/northis"];
 	var excludeRoot = false;
 	var includeArray = 
 		["/",
