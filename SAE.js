@@ -27,6 +27,7 @@ function getDefaults(){
 		//Prefix to pass through proxy, important for reporting URL.
 		proxyPrefix : '', 
 		//Csp file to use. Can be generated with grunt-csp-express.
+		//Relative to projectPath
 		cspFile: '/csp.json',
 		//File to store csp reports in.
 		cspReports : '/cspReports.log',
@@ -87,22 +88,12 @@ function useCSP(cspopt,opt){
 }
 
 //Configure CSP policy with the given options.
-function configureCsp(app, bodyParser, opt){
+function configureCsp(app, bodyParser, opt, cspopt){
 	var cspLogPath = path.join(opt["projectPath"],opt["cspReports"]);
 	var cspLogStream = fs.createWriteStream(cspLogPath, {flags: 'a'});
 	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
 	//Set routes FIRST before doing sync file read.
 	app.post(opt["reportRoute"], cspReportParser, morgan(':date[clf]] :cspreport', {stream : cspLogStream}));
-	var cspFileName = path.join(opt["projectPath"],opt["cspFile"]);
-	var cspopt;
-	try{ 
-		//Blocking file read needed.
-		cspopt = jf.readFileSync(cspFileName);
-	} catch (err) {
-		//on any error use starter options and report
-		console.log("CSP: no proper path provided, using starter options.");
-		cspopt = csp.STARTER_OPTIONS;
-	}
 	app.use(useCSP(cspopt,opt));
 }
 
@@ -118,7 +109,7 @@ function setXSRFToken(res){
 			headerValue += "; Secure";
 		}
 		res.append('Set-Cookie', headerValue);
-		res.append('X-Forwarded-Proto:', 'https');
+		// res.append('X-Forwarded-Proto:', 'https');
 
 	} catch(ex) { 
 		console.log("Entropy sources drained.");
@@ -213,6 +204,7 @@ function continueAuthedRoute(req, res, next){
 			console.log("CSETTING!!!!");
 			res.sae.cs.csset(req, res);
 		}
+		console.log("######CSP:\n" + res.get('Content-Security-Policy'));
 		//Execute original send();
 		sendRef.call(this,newStr);
 	};
@@ -226,6 +218,7 @@ function continueAuthedRoute(req, res, next){
  *	Execute failedAuthFunction(req, res)
  */
 function validateSession(req, res, next){
+		console.log("#########This url is: " + req.url);
 		console.log("#########This path is: " + req.path);
 		//Check anti XSRF token
 		var token = req.get('X-XSRF-TOKEN');
@@ -271,13 +264,24 @@ module.exports = function(myoptions) {
 	//Add reportRoute to exclusion of routes.
 	opt["excludedAuthRoutes"].push(opt["reportRoute"]);
 	var exclusionRegex = er.getExclusionRegex(opt["excludeAuthRoot"],opt["excludedAuthRoutes"]);
+	// Read csp config file.
+	var cspopt;
+	var cspFileName = path.join(opt["projectPath"],opt["cspFile"]);
+	try{ 
+		//Blocking file read needed.
+		cspopt = jf.readFileSync(cspFileName);
+	} catch (err) {
+		//on any error use starter options and report
+		console.log("CSP: no proper path provided, using starter options.");
+		cspopt = csp.STARTER_OPTIONS;
+	}
 	return {
 		configure: function(app,bodyParser){
 			app.use(cookieParser());
+			configureCsp(app,bodyParser,opt,cspopt);
 			app.use(addSAE(opt,cs));
 			console.log(exclusionRegex);
 			app.use(exclusionRegex, validateSession);
-			configureCsp(app,bodyParser,opt);
 		},
 		defaults: def,
 		options: opt,

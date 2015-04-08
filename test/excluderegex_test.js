@@ -478,5 +478,21 @@ exports.excluderegex = {
 		test.equal(item, expectedRoutes[index], "The item: '"+item+"' should equal '" + expectedRoutes[index]+"'");
 	});
 	test.done();
+  },
+  extensiveRoot: function(test){
+	var excludeRoutes = ["notthis", "northis"];
+	var roots= 
+		["/",
+		"//"];//,
+		// ""];
+    test.expect(2*roots.length);
+	var regexNoRoot = er.getExclusionRegex(true, excludeRoutes);
+	var regexWithRoot = er.getExclusionRegex(false, excludeRoutes);
+	roots.forEach(function(item){
+		//     NOT
+		test.ok(!regexNoRoot.test(item), "No root string should match: \n "+regexNoRoot+".test("+item+")");
+		test.ok(regexWithRoot.test(item), "Each root string should match: \n "+regexWithRoot+".test("+item+")");
+	});
+	test.done();
   }
 };
