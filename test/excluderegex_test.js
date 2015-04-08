@@ -285,6 +285,89 @@ exports.excluderegex = {
 	});
 	test.done();
   },
+  excludeRootLong : function(test){
+	var excludeRoutes = ["/notthis/extra", "//northis/plus/this"];
+	var excludeRoot = true;
+	var includeArray = 
+		["/this",
+		"/andthis",
+		"/thisisok",
+		"/thistoo/too",
+		"/my/extra/long/route/notthis/extra/",
+		"/my/extra/long/route/northis/plus/this"];
+	var excludeArray = 
+		["/",
+		"notthis/extra",
+		"/notthis/extra",
+		"//notthis/extra",
+		"/notthis/extra/",
+		"northis/plus/this",
+		"/northis/plus/this",
+		"/northis/plus/this/",
+		"notthis/extra/anything",
+		"/notthis/extra/anything",
+		"//notthis/extra/anything",
+		"/notthis/extra/anything/",
+		"northis/plus/this/anything",
+		"/northis/plus/this/anything",
+		"//northis/plus/this/anything",
+		"/northis/plus/this/anything/"];
+    test.expect(includeArray.length + excludeArray.length);
+
+	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
+
+	includeArray.forEach(function(item){
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
+	});
+
+	excludeArray.forEach(function(item){
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
+	});
+	test.done();
+  },
+  includeRootLong : function(test){
+	var excludeRoutes = ["//notthis/extra", "/northis/plus/this"];
+	var excludeRoot = false;
+	var includeArray = 
+		["/",
+		"/this",
+		"/andthis",
+		"/thisisok",
+		"/thistoo/too",
+		"/my/extra/long/route/notthis/extra/",
+		"/my/extra/long/route/northis/plus/this"];
+	var excludeArray = 
+		["notthis/extra",
+		"/notthis/extra",
+		"//notthis/extra",
+		"/notthis/extra/",
+		"northis/plus/this",
+		"/northis/plus/this",
+		"/northis/plus/this/",
+		"//northis/plus/this/",
+		"notthis/extra/anything",
+		"/notthis/extra/anything",
+		"//notthis/extra/anything",
+		"/notthis/extra/anything/",
+		"//notthis/extra/anything/",
+		"northis/plus/this/anything",
+		"/northis/plus/this/anything",
+		"/northis/plus/this/anything/"];
+    test.expect(includeArray.length + excludeArray.length);
+
+	var regex = er.getExclusionRegex(excludeRoot, excludeRoutes);
+
+	includeArray.forEach(function(item){
+		test.ok(regex.test(item), "Each string should match: \n "+regex+".test("+item+")");
+	});
+
+	excludeArray.forEach(function(item){
+		//     NOT
+		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
+	});
+	test.done();
+  },
   noExclusions_excludeRoot: function(test){
 	var excludeRoutes = [];
 	var excludeRoot = true;
@@ -367,6 +450,32 @@ exports.excluderegex = {
 	excludeArray.forEach(function(item){
 		//     NOT
 		test.ok(!regex.test(item), "None of the strings should EVER match: \n "+regex+".test("+item+")");
+	});
+	test.done();
+  },
+  sanitizeRoutes: function(test){
+	var testRoutes = 
+		["/this",
+		"/andthis/",
+		"/my/extra/long/route/notthis/",
+		"//notthis",
+		"//notthis/",
+		"//notthis/butthis",
+		"notthis/butthis/",
+		"northis/anything/"];
+	var expectedRoutes =
+		["this",
+		"andthis/",
+		"my/extra/long/route/notthis/",
+		"notthis",
+		"notthis/",
+		"notthis/butthis",
+		"notthis/butthis/",
+		"northis/anything/"];
+	var sanitized = er.sanitizeRoutes(testRoutes);
+	test.expect(testRoutes.length);
+	sanitized.forEach(function(item, index){
+		test.equal(item, expectedRoutes[index], "The item: '"+item+"' should equal '" + expectedRoutes[index]+"'");
 	});
 	test.done();
   }
