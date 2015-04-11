@@ -8,7 +8,8 @@ var path = require('path');
 var morgan = require('morgan');
 var cookieParser = require('cookie-parser');
 var er = require('./lib/excluderegex');
-var clientSession = require('client-session');
+// var clientSession = require('client-session');
+var clientSession = require('client-sessions');
 
 //SETTINGS AND OPTIONS RELATED
 var requiredOptions = ["projectPath","keyPath","failedAuthFunction"];
@@ -37,7 +38,7 @@ function getDefaults(){
 		excludeAuthRoot: true,
 		//List of Routes to exclude from authentication.
 		excludedAuthRoutes : [],
-		//Session (and anti-XSRF token) lifetime.
+		//Session (and anti-XSRF token) lifetime in seconds.
 		sessionLifeTime : 3600,
 		//Serve cookies only over https TODO?
 		//How does this interact with proxy/other settings?
@@ -97,9 +98,10 @@ function configureCsp(app, bodyParser, opt, cspopt){
 	app.use(useCSP(cspopt,opt));
 }
 
-// Implementation for anti XSRF/CSRF double submit cookie.
+/*
+ * Adds an anti-XSRF double submit cookie to the given response.
+ */
 function setXSRFToken(res){
-	// var randomtoken = "NOTARANDOMTOKEN";
 	try{
 		var buf = crypto.randomBytes(256);
 		var randomtoken = buf.toString('base64');
@@ -117,7 +119,9 @@ function setXSRFToken(res){
 	}
 }
 
-// Implementation for anti XSRF/CSRF double submit cookie.
+/*
+ * Removes the anti-XSRF double submit from the given response.
+ */
 function unsetXSRFToken(res){
 	var headerValue = 'XSRF-TOKEN=; Path=/; Max-Age=1';
 	if(res.sae.opt["httpsOnlyCookie"]){
@@ -126,46 +130,44 @@ function unsetXSRFToken(res){
 	res.append('Set-Cookie', headerValue);
 }
 
+/*
+ *	Sends a new client-session with the given session and send data.
+ */
 function sendNewSession(req, res, sessionData, sendData){
 	console.log("newSession");
-	//Initialise new session on req/res
-	req.sae.cs.csget(req, res);
-	//Set session data in REQ!!!
-	req.csession = sessionData;	
+	//Set session data in req!!!
+	//Must explicity use req.cession
+	Object.keys(sessionData).forEach(function(name){
+		req.csession[name] = sessionData[name];
+	});
 	req.csession["authenticated"] = true;
 	console.log("sending:\n" + util.inspect(req.csession));
-	//Flush data to headers
-	res.sae.cs.csset(req, res);
 	//Set anti-XSRF token
 	setXSRFToken(res);
-	//and send the dataz.
+	//and send the data.
 	console.log("sendData:\n" + util.inspect(sendData));
 	res.send(sendData);
 }
 
+/*
+ * Sends the given data and removes the client-session cookie.
+ */
 function sendDestroySession(req, res, sendData){
-	cs=req.sae.cs;
-	cs.csget(req, res);
-	//Probably not necessary to unset this.
-	req.csession["authenticated"] = false;
-	//Expire the cookie in 1 second.
-	//NOTE: 0 would result in cookie deletion on closing the browser.
-	cs.opt.maxAge = 1;
-	cs.csset(req, res);
+	//Clear the csession.
+	req.csession.reset();
+	//And unset the XSRF-token
 	unsetXSRFToken(res);
 	res.send(sendData);
-	//Reset maxAge since this is a global option.
-	cs.opt.maxAge = req.sae.cs.sessionLifeTime;
 }
 
 /*
  * Adds SAE functionality and options to each request/response.
  */
-function addSAE(opt, clientsession){ 
+// function addSAE(opt, clientsession){ 
+function addSAE(opt){ 
 	return function (req, res, next){
 		res.sae = {};
 		req.sae = {};
-		req.sae.cs = res.sae.cs = clientsession;
 		req.sae.opt = res.sae.opt = opt;
 		res.sae.sendNewSession = sendNewSession;
 		res.sae.sendDestroySession = sendDestroySession;
@@ -202,7 +204,7 @@ function continueAuthedRoute(req, res, next){
 		if(req.csession !== undefined &&
 			Object.keys(req.csession) !==0){
 			console.log("CSETTING!!!!");
-			res.sae.cs.csset(req, res);
+			// res.sae.cs.csset(req, res);
 		}
 		console.log("######CSP:\n" + res.get('Content-Security-Policy'));
 		//Execute original send();
@@ -220,19 +222,22 @@ function continueAuthedRoute(req, res, next){
 function validateSession(req, res, next){
 		console.log("#########This url is: " + req.url);
 		console.log("#########This path is: " + req.path);
-		//Check anti XSRF token
-		var token = req.get('X-XSRF-TOKEN');
-		var tokenCookie = req.cookies["XSRF-TOKEN"];
-		console.log("Header token: "+token);
 		console.log("Cookie token: "+tokenCookie);
-//If the token was not found within the request or the value provided does not match the value within the session, then the request should be aborted, token should be reset and the event logged as a potential CSRF attack in progress. 
-		if(token !== undefined && tokenCookie !==undefined && token === tokenCookie){
-			console.log("Token OK");
-			//XSRF token OK
-			//Unwrap csession
-			req.sae.cs.csget(req, res);
-			console.log("csession:\n"+util.inspect(req.csession));
-			if(req.csession["authenticated"]){
+		console.log("csession:\n"+util.inspect(req.csession));
+		//If the token was not found within the request or 
+		//the value provided does not match the value within the session, 
+		//then the request should be aborted, token should be reset and 
+		//the event logged as a potential CSRF attack in progress. 
+		//
+		//Unwrap csession and check authenticated field
+		if(req.csession !== undefined && req.csession["authenticated"]){
+			//Check anti XSRF token
+			var token = req.get('X-XSRF-TOKEN');
+			var tokenCookie = req.cookies["XSRF-TOKEN"];
+			console.log("Header token: "+token);
+			if(token !== undefined && tokenCookie !==undefined && token === tokenCookie){
+				console.log("Token OK");
+				//XSRF token OK
 				console.log("TRUE");
 				//Succesful auth let request go trough.
 				continueAuthedRoute(req,res,next);
@@ -250,17 +255,21 @@ function validateSession(req, res, next){
 module.exports = function(myoptions) {
 	var def= getDefaults();
 	var opt= overrideDefaults(def, myoptions); 
-	var csoptions = {
-			path:'/',  
-			maxAge: opt["sessionLifeTime"], 
-			secure: opt["httpsOnlyCookie"],
-			//TODO: currently NOT httpOnly!!!
-			httpOnly: false 
-	};
 	var secretKeyFile = fs.readFileSync(opt["keyPath"], {encoding:'utf8'});
 	var secretKey = secretKeyFile.toString().split("\n")[0];
 	console.log(secretKey);
-	var cs = clientSession(secretKey,csoptions);
+	var csoptions = {
+			cookieName : 'csession',
+			secret : secretKey,
+			duration: opt["sessionLifeTime"]*1000, //duration is in ms
+			activeDuration: opt["sessionLifeTime"]*500, // 
+			cookie: {
+				path:'/',  
+				secure: opt["httpsOnlyCookie"],
+				//TODO: currently NOT httpOnly!!!
+				httpOnly: false 
+			}
+	};
 	//Add reportRoute to exclusion of routes.
 	opt["excludedAuthRoutes"].push(opt["reportRoute"]);
 	var exclusionRegex = er.getExclusionRegex(opt["excludeAuthRoot"],opt["excludedAuthRoutes"]);
@@ -279,7 +288,9 @@ module.exports = function(myoptions) {
 		configure: function(app,bodyParser){
 			app.use(cookieParser());
 			configureCsp(app,bodyParser,opt,cspopt);
-			app.use(addSAE(opt,cs));
+			app.use(clientSession(csoptions));
+			// app.use(addSAE(opt,cs));
+			app.use(addSAE(opt));
 			console.log(exclusionRegex);
 			app.use(exclusionRegex, validateSession);
 		},
