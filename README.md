@@ -1,61 +1,58 @@
-# Sec-Angular-Express (SAE)
-The plan is to greatly minimize the effort required to setup a secure express-angular.js application.
-Combining several common countermeasures and best practices that are currently scattered on the internet.
-The ideal would be that even an inexperienced developer can start using Node.Js and angular and just require this module to provide a decent level of security.
+# Sec-Angular-Express
 
-Of course some configuration will be required but this will at least be centralised in one module instead of several.
+[Node.js](https://nodejs.org) module to ease the development of a *secure* [Express](http://expressjs.com/)+[Angular.js](https://angularjs.org/) web application. Angular.js provides a couple of nice features that make developing a secure web application as easy as possible. This module tries to make good use of these features whith as much effort as possible.
 
-##Protections it provides
-Proper client-side (contextualized) output encoding is provided by the use of Angular.js.
+##Quickstart
+At the very least you need to do three things:
+###1. Configure the module
+In your main file:
+```JavaScript
+var express = require('express');
+var app = express();
+//All options required:
+var saeoptions = {
+	projectPath: __dirname,
+	keyPath: "/Path/to/fileWith.key",
+	failedAuthFunction : function(req,res){
+							res.redirect("/login");
+							return; 
+						}
+};
+var sae = require('sec-angular-express')(saeoptions);
+//... other requires
 
-##TODO:
-Determine minimum nodejs version requirement!
-1.3 for Angular.js?
+//Make sure this is done BEFORE any other middleware!
+sae.configure(app);
 
-##Planned
+/*
+* Example failed authentication function.
+*/
 
-###CSP (HIGH) 
-CSP support using this package? 
-(Or implement it yourself?)
-https://www.npmjs.com/package/content-security-policy
+//... rest of your application
+```
 
-Insert <ang-csp> tag into the code (by default if CSP is enabled).
-
-Make gulp/grunt preprocess all files and find urls to use in CSP.
-Split up http and https urls.
-To make it clear they should use https.
-
-###CSRF protection (HIGH)
-Use system that deploys the default angular.js CSRF protection.
-
-###
-
-
-###JWT (LOW)
-Might be useful to include a JWT option that can be used as authorization.
-
-####EPR (OPTIONAl)
-Fascinating project.
-https://github.com/google/epr
-
-Security in depth? 
-Automatic creation of epr-manifest.json?
-Use same preprocessing as with CSP.
-
-###Warning system (HIGH)
-####Known bad practices in Angular.js
-Preprocessor could also scan for the dirty gif inclusion (Heiderich) in Angular.Js part.
-####Non-https urls in code
-
-###Reporting system (HIGH)
-####Request logging by default.
-####CSP reporting (HIGH)
-####CSRF reporting (HIGH)
-####EPR reporting (OPTIONAl)
-
-
-###Settings
-Provide sane defaults but also options to turn them off.
-Store server-side passwords (e.g. client-session) in seperate file.
-Maybe also grunt this into the result?
-	
+###2. Start a new session at your login route.
+At your login route:
+```Javascript
+	//...
+	if(yourOwnCheckHere){
+		var sendData = { send : data };
+		var sessionData = { 
+			some : session,
+			data : here
+		}
+		//Let sae send a new session.
+		res.sae.sendNewSession(req, res, sessionData, sendData); 
+	} else {
+		// handleErrorYourself
+	}
+	//...
+```
+###3. Destroy the session at your logout route.
+At your logout route: 
+```Javascript
+	//...
+	var sendData = { msg : "You are logged out!" };
+	res.sae.sendDestroySession(req,res,sendData);
+	//...
+```

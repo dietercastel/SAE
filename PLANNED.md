@@ -12,6 +12,9 @@ Proper client-side (contextualized) output encoding is provided by the use of An
 Determine minimum nodejs version requirement!
 1.3 for Angular.js?
 
+introduce loginRoute and logoutRoute?
+(no FailedAuth needed by default?)
+
 ##Planned
 
 ###CSP (HIGH) 
