@@ -6,6 +6,7 @@ var jf = require('jsonfile');
 var util = require('util');
 var path = require('path');
 var morgan = require('morgan');
+var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var er = require('./lib/excluderegex');
 // var clientSession = require('client-session');
@@ -89,7 +90,7 @@ function useCSP(cspopt,opt){
 }
 
 //Configure CSP policy with the given options.
-function configureCsp(app, bodyParser, opt, cspopt){
+function configureCsp(app, opt, cspopt){
 	var cspLogPath = path.join(opt["projectPath"],opt["cspReports"]);
 	var cspLogStream = fs.createWriteStream(cspLogPath, {flags: 'a'});
 	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
@@ -285,9 +286,9 @@ module.exports = function(myoptions) {
 		cspopt = csp.STARTER_OPTIONS;
 	}
 	return {
-		configure: function(app,bodyParser){
+		configure: function(app){
 			app.use(cookieParser());
-			configureCsp(app,bodyParser,opt,cspopt);
+			configureCsp(app,opt,cspopt);
 			app.use(clientSession(csoptions));
 			// app.use(addSAE(opt,cs));
 			app.use(addSAE(opt));
