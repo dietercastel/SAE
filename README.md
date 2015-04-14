@@ -55,12 +55,93 @@ At your logout route:
 ```
 
 ##Features
-
 - Centralised authentication on ALL routes except "/" plus those specified in the `excludedAuthRoutes` option.
 - Uses client-side sessions to enable proper REST services. 
-- Anti-XSRF protection to use in combination with Angular.js.
+- [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with Angular.js (works without ANY configuration).
 - Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
-- 
+- [Content Security Policy](https://en.wikipedia.org/wiki/Content_Security_Policy) support to be configured manually in a file or to be used in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
+
+##Options
+
+###projectPath (String, REQUIRED)
+The path to your project floder. `__dirname` in your main file can often be used for this setting.
+
+###keyPath (String, REQUIRED)
+The absolute path to a file containing the server-side key for encrypting the client-side sessions.
+Example: `/path/to/keyfile.key` pointing to a file containing only `mysupersecretkeyiwillbeusing`.
+
+###failedAuthFunction (function, REQUIRED)
+A function that gets executed when a request is not proberly authenticated. 
+Example
+```JavaScript
+function(req,res){
+	//Calling next() here is NOT a good idea.
+	res.redirect("/login");
+	return; 
+}
+```
+
+###reportRoute (String, Optional)
+Default value: `'/reporting'`
+Route that is used to acquire various reports most notably Content Security Policy Reports.
+This route is excluded from any form of build in authentication so there is no need to add this route to the `excludedAuthRoutes` option.
+
+###proxyPrefix (String, Optional)
+Default value: `''`
+Prefix used in combination with the `reportRoute` url. 
+If you're not behind a proxy you will never need this.
+
+###cspFile (String, Optional)
+Default value: `'/csp.json'`
+File path relative to your project to a file describing your content security policy.
+Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
+
+This file can also be manually created using the following template in a file:
+```JavaScript
+{
+    "default-src": [],
+    "script-src": [],
+    "object-src": [],
+    "style-src": [],
+    "img-src": [],
+    "media-src": [],
+    "frame-src": [],
+    "font-src": [],
+    "connect-src": [],
+	"sandbox" : []
+}
+```
+
+###cspReportsLog (String, Optional)
+Default value: `'/cspReports.log'`
+File path relative to your project to the file where Content Security Policy reports should be stored.
+
+###authReportsLog (String, Optional)
+Default value: `'/authReports.log'`
+File path relative to your project to the file where failed authentication reports should be stored.
+
+###JSONPrefixing (Boolean, Optional)
+Default value: `true`
+Determines whether to prefix JSON body data to prevent [this](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/) attack. The prefix is automatically stripped by angular.js at the client side.
+
+###excludeAuthRoot (Boolean, Optional)
+Default value: `true`
+Determines whether to exclude the root path "/" from the authentication mechanism.
+Only the "/" path is excluded when true. Not "/somethinghere" nor "/some/thing/here".
+
+###excludedAuthRoutes ([String], Optional)
+Default value: `[]`
+Other routes to exclude from the authentication mechanism. Login, logout, register routes and any resources that should accessible without authentication should be excluded.
+If you exclude for example "/login" all paths starting with "/login/" will ALSO be excluded from authentication. So "/login/admin","/login/some/thing/here" will also be excluded from the authentication middleware. 
+
+###sessionLifeTime (Integer, Optional)
+Default value: `3600`
+Time in seconds a session and XSRF token should last. It's advised to set this session as short as possible.
+
+###httpsOnlyCookie (Boolean, Optional)
+Default value: `false`
+Forces to only allow the session cookies to be used over a https connection.
+It's highly recommended to use https and then enable this setting.
 
 ##Q&A
 
