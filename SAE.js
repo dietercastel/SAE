@@ -37,6 +37,8 @@ function getDefaults(){
 		cspReportsLog : '/cspReports.log',
 		//File to store auth reports in.
 		authReportsLog : '/authReports.log',
+		//File to store xsrf reports in.
+		xsrfReportsLog : '/xsrfReports.log',
 		//Use the JSON prefix countermeasure described in angular docs.
 		JSONPrefixing: true,
 		//Exclude the '/' route from authentication.
@@ -50,6 +52,14 @@ function getDefaults(){
 		//Rename??
 		httpsOnlyCookie : false 
 	};
+}
+
+/*
+ * Returns a log stream of the given type with the given options. 
+ */
+function getLogStream(logType, opt){
+	var logPath = path.join(opt["projectPath"],opt[logType]);
+	return  fs.createWriteStream(logPath, {flags: 'a'});
 }
 
 //  Overrides the default options with the user supplied options.
@@ -103,8 +113,7 @@ function useCSP(cspopt,opt){
 
 //Configure CSP reporting route with the given options.
 function configureCspReport(app, opt, cspopt){
-	var cspLogPath = path.join(opt["projectPath"],opt["cspReportsLog"]);
-	var cspLogStream = fs.createWriteStream(cspLogPath, {flags: 'a'});
+	var cspLogStream = getLogStream("cspReportsLog", opt);
 	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
 	app.post(opt["reportRoute"], cspReportParser, morgan(':date[clf]] :cspreport', {stream : cspLogStream}));
 	app.post(opt["reportRoute"], function(req,res){
@@ -115,8 +124,7 @@ function configureCspReport(app, opt, cspopt){
 }
 
 function configureAuth(app, opt, exclusionRegex){
-		var authLogPath = path.join(opt["projectPath"],opt["authReportsLog"]);
-		var authLogStream = fs.createWriteStream(authLogPath, {flags:'a'});
+		var authLogStream = getLogStream("authReportsLog",opt);
 		app.use(exclusionRegex, validateSession(authLogStream));
 }
 
@@ -146,17 +154,6 @@ function setXSRFToken(req,res,next){
 }
 
 /*
- * Removes the anti-XSRF double submit from the given response.
- */
-function unsetXSRFToken(res){
-	var headerValue = xsrfCookieName +'=; Path=/; Max-Age=1';
-	if(res.sae.opt["httpsOnlyCookie"]){
-		headerValue += "; Secure";
-	}
-	res.append('Set-Cookie', headerValue);
-}
-
-/*
  *	Sends a new client-session with the given session and send data.
  */
 function sendNewSession(req, res, sessionData, sendData){
@@ -170,7 +167,8 @@ function sendNewSession(req, res, sessionData, sendData){
 	console.log("sending:\n" + util.inspect(req.csession));
 	//Set anti-XSRF token
 	// console.log("newSession with token:" + req.csrfToken());
-	setXSRFToken(req, res, undefined);
+	//Reset XSRF token is done autmatically on each request.
+	// setXSRFToken(req, res, undefined);
 	//and send the data.
 	console.log("sendData:\n" + util.inspect(sendData));
 	res.send(sendData);
@@ -180,8 +178,7 @@ function sendNewSession(req, res, sessionData, sendData){
  * Sends the given data and removes the client-session cookie.
  */
 function sendDestroySession(req, res, sendData){
-	//Clear XSRF to
-	unsetXSRFToken(res);
+	//Reset XSRF token is done autmatically on each request.
 	//Clear the csession.
 	req.csession.reset();
 	//And unset the XSRF-token
@@ -233,39 +230,27 @@ function continueAuthedRoute(req, res, next){
 	next();
 }
 
+/*
+ * Returns a session validation function that logs to the given stream.
+ */
 function validateSession(authLogStream){
 	/*
-	 * If session + anti XSRF token is valid
+	 * If session is valid
 	 *	Executes next()
 	 * In any other case:
 	 *	Execute failedAuthFunction(req, res)
 	 */
 	return function(req, res, next){
+		console.log("XSRF Token OK");
 		console.log("#########This url is: " + req.url);
 		console.log("#########This path is: " + req.path);
 		console.log("csession:\n"+util.inspect(req.csession));
-		//If the token was not found within the request or 
-		//the value provided does not match the value within the session, 
-		//then the request should be aborted, token should be reset and 
-		//the event logged as a potential CSRF attack in progress. 
-		//
 		//Unwrap csession and check authenticated field
 		if(req.csession !== undefined && req.csession["authenticated"]){
-			//Check anti XSRF token
-			var token = req.get(xsrfHeaderName);
-			var tokenCookie = req.cookies[xsrfCookieName];
-			console.log("Cookie token: "+tokenCookie);
-			console.log("Header token: "+token);
-			// if(token !== undefined && tokenCookie !==undefined && token === tokenCookie){
-				console.log("Token OK");
-				//XSRF token OK
-				console.log("TRUE");
-				//Succesful auth let request go trough.
-				continueAuthedRoute(req,res,next);
-				return;
-			// } else {
-			// 	morgan(':date[clf]] :xsrftoken', {stream : authLogStream});
-			// }
+			console.log("Authenticated request.");
+			//Succesful auth let request go trough.
+			continueAuthedRoute(req,res,next);
+			return;
 		}
 		//Handle bad request.
 		console.log("Auth Failed");
@@ -275,19 +260,30 @@ function validateSession(authLogStream){
 	};
 }
 
-function handleWrongXSRFToken(err, req, res, next) {
-	// console.log(util.inspect(err));
-	// if(err=== undefined){
-	// 	console.log("NEXT!");
-	// 	return next();
-	// }
-	if(err.code !== 'EBADCSRFTOKEN'){
-		return next(err);
+/*
+ * Returns an xsrf error handling function with the given log stream.
+ */
+function handleWrongXSRFToken(xsrfLogStream){
+	/* 
+	 * Handles a wrong XSRF token error thrown by csurf:
+	 *
+	 * If the token was not found within the request or 
+	 * the value provided does not match the value within the session, 
+	 * then the request should be aborted, token should be reset and 
+	 * the event logged as a potential CSRF attack in progress. 
+	 */
+	return function(err, req, res, next) {
+		if(err.code !== 'EBADCSRFTOKEN'){
+			return next(err);
+		}
+		//Log potential xsrf attack
+		morgan(':date[clf]] :xsrftoken', {stream : xsrfLogStream});
+		console.log("WRONG CSRFTOKEN");
+		console.log(util.inspect(err));
+		//Reset XSRF token is done autmatically on each request.
+		res.status(403);
+		res.send('Possible CSRF attack detected.');
 	}
-	console.log("WRONG CSRFTOKEN");
-	console.log(util.inspect(err));
-	res.status(403);
-	res.send('Possible CSRF attack detected.');
 }
 
 module.exports = function(myoptions) {
@@ -352,10 +348,10 @@ module.exports = function(myoptions) {
 			console.log(exclusionRegex);
 			//Add session validation
 			configureAuth(app,opt,exclusionRegex);
-			// app.use(exclusionRegex, validateSession);
 		},
 		handleErrors: function(app){
-			app.use(handleWrongXSRFToken);
+			var xsrfLogStream = getLogStream("xsrfReportsLog", opt);
+			app.use(handleWrongXSRFToken(xsrfLogStream));
 		},
 		defaults: def,
 		options: opt,

@@ -24,7 +24,11 @@ var sae = require('sec-angular-express')(saeoptions);
 //Make sure this is done BEFORE any other middleware!
 sae.configure(app);
 
-//... rest of your application
+//... app.use/routes
+
+sae.handleErrors(app);
+
+// .. other error handling
 ```
 
 ###2. Start a new session at your login route.
@@ -57,7 +61,7 @@ At your logout route:
 ##Features
 - Centralised authentication on ALL routes except "/" plus those specified in the `excludedAuthRoutes` option.
 - Uses client-side sessions to enable proper REST services. 
-- [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with Angular.js (works without ANY configuration).
+- [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with Angular.js (works without ANY configuration). 
 - Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
 - [Content Security Policy](https://en.wikipedia.org/wiki/Content_Security_Policy) support to be configured manually in a file or to be used in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
 
@@ -142,6 +146,32 @@ Time in seconds a session and XSRF token should last. It's advised to set this s
 Default value: `false`
 Forces to only allow the session cookies to be used over a https connection.
 It's highly recommended to use https and then enable this setting.
+##Methods
+###configure(app)
+Configures SAE. Strongly advised to use this method before other uses of app.use(), routers or any other middleware.
+####Arguments
+app : the express applictation to configure.
+
+###handleErrors(app)
+Handles the error's thrown by SAE. A good idea to place this as first error that will be handled.
+####Arguments:
+- app : the express applictation to configure.
+
+###res.sae.sendNewSession(req, res, sessionData, sendData)
+Creates a new client-session with the given sessionData, refreshes the anti XSRF token and sends the given sendData. This call ends the processing of a request like res.send(sendData) would do.
+####Arguments:
+- req : The express request object.
+- res : The express response object.
+- sessionData : Object containing the data that should be stored in the client-side session.
+- sendData : The data that will be send in the response. Identical to the argument in res.send(sendData).
+
+###res.sae.sendDestroySession(req,res,sendData);
+Clears the client-side session, refreshes the anti XSRF token and sends the given sendData. This call ends the processing of a request like res.send(sendData) would do.
+
+####Arguments:
+- req : The express request object.
+- res : The express response object.
+- sendData : The data that will be send in the response. Identical to the argument in res.send(sendData).
 
 ##Q&A
 
@@ -150,3 +180,6 @@ Because secrets should not reside in (probably) public code. It's therefore advi
 
 ### Why shouldn't I use a server side templating engine?
 See [this explanation](https://docs.angularjs.org/guide/security#mixing-client-side-and-server-side-templates).
+
+### Why aren't 'GET', 'HEAD', 'OPTIONS' request checked against XSRF?
+Because neither of these should be able to execute a sensitive operation, they are considered [safe methods](http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.1.1). If they do in your application you should redesign it to fit the proper HTTP specifications.
