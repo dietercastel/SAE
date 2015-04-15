@@ -1,4 +1,4 @@
-//Requires
+//REQUIRES
 var crypto = require('crypto');
 var fs = require('fs');
 var csp = require('content-security-policy');
@@ -10,11 +10,11 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var er = require('./lib/excluderegex');
 var csurf = require('csurf');
-var xsrfCookieName = "XSRF-TOKEN";
-var xsrfHeaderName = "X-XSRF-TOKEN";
 var clientSession = require('client-sessions');
 
 //SETTINGS AND OPTIONS RELATED
+var xsrfCookieName = "XSRF-TOKEN";
+var xsrfHeaderName = "X-XSRF-TOKEN";
 var requiredOptions = ["projectPath","keyPath","failedAuthFunction"];
 function getDefaults(){
 	return { 
@@ -62,8 +62,10 @@ function getLogStream(logType, opt){
 	return  fs.createWriteStream(logPath, {flags: 'a'});
 }
 
-//  Overrides the default options with the user supplied options.
-//  Throws an error if not all required options are provided.
+/* 
+ * Overrides the default options with the user supplied options.
+ * Throws an error if not all required options are provided.
+ */ 
 function overrideDefaults(defaults, options){
 	var resultObject = defaults; 
 	var stillRequired = requiredOptions;
@@ -81,25 +83,28 @@ function overrideDefaults(defaults, options){
 	return resultObject;
 }
 
-//CSP RELATED FUNCTIONS
+//MORGAN LOGGING SETUP
 //Custom :cspreport logging token with morgan
 morgan.token('cspreport', function(req, res){ 
 	return '\n'+util.inspect(req.body["csp-report"]).toString(); 
 });
+//Custom :failedAuth logging token with morgan
 morgan.token('failedAuth', function(req, res){ 
 	return '\n'+req.url+'\n'+util.inspect(req.csession);
 });
+//Custom :xsrftoken logging token with morgan
 morgan.token('xsrftoken', function(req, res){ 
 	var token = req.get(xsrfHeaderName);
 	var tokenCookie = req.cookies[xsrfCookieName];
 	return '\n'+"token:"+token+'\n'+"cookie:"+tokenCookie; 
 });
 
-//Use the content-security-policy middleware
+//CSP RELATED FUNCTIONS
+/*
+ * Configure and return the content-security-policy middleware.
+ */
 function useCSP(cspopt,opt){
 	//TODO: see if this is necessary
-	//Probably needed with all srcs
-	// cspopt["default-src"] = csp.SRC_NONE; 
 	cspopt["connect-src"] = csp.SRC_SELF; 
 	cspopt["report-uri"] = opt["proxyPrefix"] + opt["reportRoute"];
 	cspopt["report-only"] = opt["cspReportOnly"];
@@ -111,7 +116,9 @@ function useCSP(cspopt,opt){
 	return csp.getCSP(cspopt);
 }
 
-//Configure CSP reporting route with the given options.
+/*
+ * Configure CSP reporting route with the given options.
+ */
 function configureCspReport(app, opt, cspopt){
 	var cspLogStream = getLogStream("cspReportsLog", opt);
 	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
@@ -123,6 +130,9 @@ function configureCspReport(app, opt, cspopt){
 	});
 }
 
+/*
+ * Configures the authentication with the given options.
+ */
 function configureAuth(app, opt, exclusionRegex){
 		var authLogStream = getLogStream("authReportsLog",opt);
 		app.use(exclusionRegex, validateSession(authLogStream));
@@ -132,25 +142,17 @@ function configureAuth(app, opt, exclusionRegex){
  * Adds an anti-XSRF double submit cookie to the given response.
  */
 function setXSRFToken(req,res,next){
-	// try{
-		// var buf = crypto.randomBytes(256);
-		// var randomtoken = buf.toString('base64');
-		console.log("SETTING anti XSRF TOKEN");
-		// var headerValue = xsrfCookieName +'='+randomtoken+'; Path=/';
-		var headerValue = xsrfCookieName +'='+req.csrfToken()+'; Path=/';
-		if(res.sae.opt["httpsOnlyCookie"]){
-			headerValue += "; Secure";
-		}
-		res.append('Set-Cookie', headerValue);
-		// res.append('X-Forwarded-Proto:', 'https');
-
-	// } catch(ex) { 
-	// 	console.log("Entropy sources drained.");
-	// 	throw ex;
-	// }
-		if(next !== undefined){
-			next();
-		}
+	console.log("SETTING anti XSRF TOKEN");
+	//Set the cookie so angular.js can read the token.
+	var headerValue = xsrfCookieName +'='+req.csrfToken()+'; Path=/';
+	if(res.sae.opt["httpsOnlyCookie"]){
+		headerValue += "; Secure";
+	}
+	res.append('Set-Cookie', headerValue);
+	// res.append('X-Forwarded-Proto:', 'https');
+	if(next !== undefined){
+		next();
+	}
 }
 
 /*
@@ -165,10 +167,7 @@ function sendNewSession(req, res, sessionData, sendData){
 	});
 	req.csession["authenticated"] = true;
 	console.log("sending:\n" + util.inspect(req.csession));
-	//Set anti-XSRF token
-	// console.log("newSession with token:" + req.csrfToken());
 	//Reset XSRF token is done autmatically on each request.
-	// setXSRFToken(req, res, undefined);
 	//and send the data.
 	console.log("sendData:\n" + util.inspect(sendData));
 	res.send(sendData);
@@ -179,9 +178,7 @@ function sendNewSession(req, res, sessionData, sendData){
  */
 function sendDestroySession(req, res, sendData){
 	//Reset XSRF token is done autmatically on each request.
-	//Clear the csession.
 	req.csession.reset();
-	//And unset the XSRF-token
 	res.send(sendData);
 }
 
@@ -204,7 +201,6 @@ function addSAE(opt){
  * This function intercepts res.send()
  *	When a json body is about to be send
  *	The countermeasure string ")]}',\n" is added in front of it.
- *	The client-session is also flushed into the headers.
  *	An finally the normal send function is executed.
  *
  * After send is overwritten continue with next()
@@ -214,10 +210,8 @@ function continueAuthedRoute(req, res, next){
 	res.send = function(str){
 		var newStr = str;
 		if(res.sae.opt["JSONPrefixing"]){
-			//TODO:Evaulate if this is needed with anti-XSRF token?
 			try {
 				JSON.parse(str);
-				// console.log("ADDING");
 				newStr = ")]}',\n"+str;
 			} catch (e) {
 				//nop
@@ -269,7 +263,7 @@ function handleWrongXSRFToken(xsrfLogStream){
 	 *
 	 * If the token was not found within the request or 
 	 * the value provided does not match the value within the session, 
-	 * then the request should be aborted, token should be reset and 
+	 * then the request should be aborted, token shhttp://www.theonion.com/articles/hillary-clinton-to-nation-do-not-fuck-this-up-for,38416/ould be reset and 
 	 * the event logged as a potential CSRF attack in progress. 
 	 */
 	return function(err, req, res, next) {
@@ -319,16 +313,14 @@ module.exports = function(myoptions) {
 	}
 	var csurfOptions = {
 		cookie : {
-			// key : xsrfCookieName,
 			maxAge : opt["sessionLifeTime"]*1000,
 			secure : opt["httpsOnlyCookie"],
-			httpOnly: false
+			httpOnly: true 
+		},
+		value : function (req){
+			console.log("token =="+req.get(xsrfHeaderName));
+			return req.get(xsrfHeaderName);
 		}
-		// },
-		// value : function (req){
-		// 	console.log("token =="+req.get(xsrfHeaderName));
-		// 	return req.get(xsrfHeaderName);
-		// }
 	};
 	var xsrf = csurf(csurfOptions);
 	return {
