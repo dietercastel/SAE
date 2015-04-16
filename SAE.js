@@ -11,6 +11,8 @@ var cookieParser = require('cookie-parser');
 var er = require('./lib/excluderegex');
 var csurf = require('csurf');
 var clientSession = require('client-sessions');
+var frameguard = require('frameguard'); 
+var dontSniffMIME = require('dont-sniff-mimetype');
 
 //SETTINGS AND OPTIONS RELATED
 var xsrfCookieName = "XSRF-TOKEN";
@@ -47,6 +49,8 @@ function getDefaults(){
 		excludedAuthRoutes : [],
 		//Session (and anti-XSRF token) lifetime in seconds.
 		sessionLifeTime : 3600,
+		//enables or disables frameguard.
+		disableFrameguard : false,
 		//Serve cookies only over https TODO?
 		//How does this interact with proxy/other settings?
 		//Rename??
@@ -277,8 +281,18 @@ function handleWrongXSRFToken(xsrfLogStream){
 		//Reset XSRF token is done autmatically on each request.
 		res.status(403);
 		res.send('Possible CSRF attack detected.');
+	};
+}
+
+/*
+ * Configures frameguard with the given options.
+ */
+function configureFrameguard(app, opt){
+	if(!opt["disableFrameguard"]){
+		app.use(frameguard('deny'));
 	}
 }
+
 
 module.exports = function(myoptions) {
 	var def= getDefaults();
@@ -325,7 +339,11 @@ module.exports = function(myoptions) {
 	var xsrf = csurf(csurfOptions);
 	return {
 		configure: function(app){
+			//
 			//Add third party middleware first
+			app.disable('x-powered-by');
+			app.use(dontSniffMIME());
+			configureFrameguard(app, opt);
 			//Cookieparser before xsrf
 			app.use(cookieParser());
 			//report before XSRF check!!

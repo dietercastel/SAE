@@ -64,6 +64,9 @@ At your logout route:
 - [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with Angular.js (works without ANY configuration). 
 - Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
 - [Content Security Policy](https://en.wikipedia.org/wiki/Content_Security_Policy) support to be configured manually in a file or to be used in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
+- Disabeled x-powered-by header.
+- Uses [dont-sniff-mimetype](https://github.com/helmetjs/dont-sniff-mimetype) by default.
+- Denies frame/iframe inclusion by default (click-jacking proctection) with [frameguard](https://github.com/helmetjs/frameguard)
 
 ##Options
 
@@ -146,6 +149,12 @@ Time in seconds a session and XSRF token should last. It's advised to set this s
 Default value: `false`
 Forces to only allow the session cookies to be used over a https connection.
 It's highly recommended to use https and then enable this setting.
+
+###disableFrameguard (Boolean, Optional)
+Default value: `false`
+Removes frameguard protection. Only set this to true if you actually need frame/iframe inclusion.
+If you do, consider whitelisting the allowed domains in the Content Security Policy.
+
 ##Methods
 ###configure(app)
 Configures SAE. Strongly advised to use this method before other uses of app.use(), routers or any other middleware.

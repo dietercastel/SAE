@@ -24,6 +24,10 @@ https://github.com/helmetjs/frameguard
 Seems useful but no big deal (security by obscurity)
 https://github.com/helmetjs/hide-powered-by
 
+###"Don't infer the MIME type" middleware
+Makes sense.
+https://github.com/helmetjs/dont-sniff-mimetype
+
 ###HTTP Public Key Pinning (HPKP) middleware
 Useful, also client-side security.
 But hard to test maybe? Https cert needed etc.
@@ -37,9 +41,6 @@ https://github.com/helmetjs/hsts
 Massive performance hit for tiny security improvement?
 https://github.com/helmetjs/nocache
 
-###"Don't infer the MIME type" middleware
-Makes sense.
-https://github.com/helmetjs/dont-sniff-mimetype
 
 ###Less interesting:
 https://github.com/helmetjs/ienoopen
