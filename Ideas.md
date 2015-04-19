@@ -7,6 +7,9 @@ Client-session and other keys with a sync read to a folder outside of the projec
 This folder has only read permissions for the current $USER?
 
 grunt makecsp ofcourse
+enable/disable ng-csp=""?
+Check for ng-app?
+Check for non-angular.js components and warn for XSS?
 
 extend express project generator with security in mind?
 
