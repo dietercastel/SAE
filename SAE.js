@@ -48,7 +48,7 @@ function getDefaults(){
 		//List of Routes to exclude from authentication.
 		excludedAuthRoutes : [],
 		//Session (and anti-XSRF token) lifetime in seconds.
-		sessionLifeTime : 3600,
+		sessionLifeTime : 1200,
 		//enables or disables frameguard.
 		disableFrameguard : false,
 		//Serve cookies only over https TODO?
@@ -182,7 +182,9 @@ function sendNewSession(req, res, sessionData, sendData){
  */
 function sendDestroySession(req, res, sendData){
 	//Reset XSRF token is done autmatically on each request.
+	console.log("csession before" + util.inspect(req.csession));
 	req.csession.reset();
+	console.log("csession after" + util.inspect(req.csession));
 	res.send(sendData);
 }
 
@@ -308,7 +310,7 @@ module.exports = function(myoptions) {
 			cookie: {
 				path:'/',  
 				secure: opt["httpsOnlyCookie"],
-				httpOnly: true 
+				httpOnly: true
 			}
 	};
 	//Add reportRoute to exclusion of routes.
@@ -329,7 +331,7 @@ module.exports = function(myoptions) {
 		cookie : {
 			maxAge : opt["sessionLifeTime"]*1000,
 			secure : opt["httpsOnlyCookie"],
-			httpOnly: true 
+			httpOnly: true
 		},
 		value : function (req){
 			console.log("token =="+req.get(xsrfHeaderName));

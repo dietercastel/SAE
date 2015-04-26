@@ -37,12 +37,14 @@ At your login route:
 	//...
 	if(yourOwnCheckHere){
 		var sendData = { send : data };
-		var sessionData = { 
-			some : session,
-			data : here
+		var csessionData = { 
+			"some" : "session",
+			"data" : "here"
 		}
 		//Let sae send a new session.
-		res.sae.sendNewSession(req, res, sessionData, sendData); 
+		res.sae.sendNewSession(req, res, csessionData, sendData); 
+		//In subsequent requests the data can be accessed via
+		//via the req.csession object e.g.: req.csession["some"]
 	} else {
 		// handleErrorYourself
 	}
@@ -55,6 +57,7 @@ At your logout route:
 	var sendData = { msg : "You are logged out!" };
 	//Destroy the session and send some data.
 	res.sae.sendDestroySession(req,res,sendData);
+	//Authorisation will fail on subsequent requests.
 	//...
 ```
 
@@ -142,8 +145,8 @@ Other routes to exclude from the authentication mechanism. Login, logout, regist
 If you exclude for example "/login" all paths starting with "/login/" will ALSO be excluded from authentication. So "/login/admin","/login/some/thing/here" will also be excluded from the authentication middleware. 
 
 ###sessionLifeTime (Integer, Optional)
-Default value: `3600`
-Time in seconds a session and XSRF token should last. It's advised to set this session as short as possible.
+Default value: `1200`
+Time in seconds a session and XSRF token should last. It's advised to set this session as short as possible. The default value makes the session last for 20 minutes as suggested by [OWASP](https://www.owasp.org/index.php/Session_Management#How_to_protect_yourself_4).
 
 ###httpsOnlyCookie (Boolean, Optional)
 Default value: `false`
@@ -166,8 +169,24 @@ Handles the error's thrown by SAE. A good idea to place this as first error that
 ####Arguments:
 - app : the express applictation to configure.
 
+##Request and Response ojbect additions
+
+###req.sae.opt = res.sae.opt
+This is the options object used by SAE internally. It's however not recommended to change options here. To set the options use the object passed to the constructor of the SAE middleware.
+
+###req.csession
+Object property of a request used to retrieve and store client-session data. The contents of this object is stored in an encrypted cookie with [client-sessions](https://www.npmjs.com/package/client-sessions). The decryption and encryption is done automatically on each authenticated request and response respectively. Just setting a value of csession and sending the response is sufficient. Session creation (sendNewSession) and destruction (sendDestroySession) should be done with the methods below.
+
+Usage:
+```JavaScript
+//... In some authenticated route
+req.csession["mycounter"] = 1;
+//... (sets the encrypted cookie and) sends the response. 
+res.send();
+```
+
 ###res.sae.sendNewSession(req, res, sessionData, sendData)
-Creates a new client-session with the given sessionData, refreshes the anti XSRF token and sends the given sendData. This call ends the processing of a request like res.send(sendData) would do.
+Creates a new client-session with the given sessionData and sends the given sendData. The encrypted cookie used to do this serves as authentication cookie. This call ends the processing of a request like res.send(sendData) would do.
 ####Arguments:
 - req : The express request object.
 - res : The express response object.
@@ -175,7 +194,7 @@ Creates a new client-session with the given sessionData, refreshes the anti XSRF
 - sendData : The data that will be send in the response. Identical to the argument in res.send(sendData).
 
 ###res.sae.sendDestroySession(req,res,sendData);
-Clears the client-side session, refreshes the anti XSRF token and sends the given sendData. This call ends the processing of a request like res.send(sendData) would do.
+Clears the client-side session and sends the given sendData. The encrypted cookie will not contain any more data and will not be able to authenticate a request. This call ends the processing of a request like res.send(sendData) would do.
 
 ####Arguments:
 - req : The express request object.
