@@ -287,8 +287,8 @@ function handleWrongXSRFToken(xsrfLogStream){
 /*
  * Configures frameguard with the given options.
  */
-function configureFrameguard(app, opt){
-	if(!opt["disableFrameguard"]){
+function configureFrameguard(app, cspopt, opt){
+	if(!opt["disableFrameguard"] && cspopt["frame-src"] === undefined){
 		app.use(frameguard('deny'));
 	}
 }
@@ -343,7 +343,7 @@ module.exports = function(myoptions) {
 			//Add third party middleware first
 			app.disable('x-powered-by');
 			app.use(dontSniffMIME());
-			configureFrameguard(app, opt);
+			configureFrameguard(app, cspopt, opt);
 			//Cookieparser before xsrf
 			app.use(cookieParser());
 			//report before XSRF check!!
