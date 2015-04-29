@@ -310,7 +310,8 @@ module.exports = function(myoptions) {
 			cookie: {
 				path:'/',  
 				secure: opt["httpsOnlyCookie"],
-				httpOnly: true
+				httpOnly: true,
+				ephemeral: true //make it a session cookie
 			}
 	};
 	//Add reportRoute to exclusion of routes.
@@ -341,7 +342,6 @@ module.exports = function(myoptions) {
 	var xsrf = csurf(csurfOptions);
 	return {
 		configure: function(app){
-			//
 			//Add third party middleware first
 			app.disable('x-powered-by');
 			app.use(dontSniffMIME());

@@ -32,7 +32,7 @@ sae.handleErrors(app);
 ```
 
 ###2. Start a new session at your login route.
-At your login route:
+At your login **POST** route:
 ```Javascript
 	//...
 	if(yourOwnCheckHere){
@@ -50,8 +50,10 @@ At your login route:
 	}
 	//...
 ```
+*Note*: If you don't use "/" as login route you should add that route to `excludedAuthRoutes`. Otherwise users won't be able to login unless they already have a session.
+
 ###3. Destroy the session at your logout route.
-At your logout route: 
+At your logout **POST** route: 
 ```Javascript
 	//...
 	var sendData = { msg : "You are logged out!" };
@@ -106,7 +108,7 @@ Default value: `'/csp.json'`
 File path relative to your project to a file describing your content security policy.
 Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
 
-This file can also be manually created using the following template in a file:
+This file can also be manually created using the following template in a file.
 ```JavaScript
 {
     "default-src": [],
@@ -141,12 +143,12 @@ Only the "/" path is excluded when true. Not "/somethinghere" nor "/some/thing/h
 
 ###excludedAuthRoutes ([String], Optional)
 Default value: `[]`
-Other routes to exclude from the authentication mechanism. Login, logout, register routes and any resources that should accessible without authentication should be excluded.
+Other routes to exclude from the authentication mechanism. Login route, register route and any resources that should be accessible without authentication should be excluded.
 If you exclude for example "/login" all paths starting with "/login/" will ALSO be excluded from authentication. So "/login/admin","/login/some/thing/here" will also be excluded from the authentication middleware. 
 
 ###sessionLifeTime (Integer, Optional)
 Default value: `1200`
-Time in seconds a session and XSRF token should last. It's advised to set this session as short as possible. The default value makes the session last for 20 minutes as suggested by [OWASP](https://www.owasp.org/index.php/Session_Management#How_to_protect_yourself_4).
+Time in seconds a session and XSRF token should last. It's advised to set this session as short as possible. The default value makes the session last for 20 minutes as suggested by [OWASP](https://www.owasp.org/index.php/Session_Management#How_to_protect_yourself_4). The session will also end on closing of the browser.
 
 ###httpsOnlyCookie (Boolean, Optional)
 Default value: `false`
@@ -175,7 +177,7 @@ Handles the error's thrown by SAE. A good idea to place this as first error that
 This is the options object used by SAE internally. It's however not recommended to change options here. To set the options use the object passed to the constructor of the SAE middleware.
 
 ###req.csession
-Object property of a request used to retrieve and store client-session data. The contents of this object is stored in an encrypted cookie with [client-sessions](https://www.npmjs.com/package/client-sessions). The decryption and encryption is done automatically on each authenticated request and response respectively. Just setting a value of csession and sending the response is sufficient. Session creation (sendNewSession) and destruction (sendDestroySession) should be done with the methods below.
+Object property of a request used to retrieve and store client-session data. The contents of this object is stored in an encrypted cookie with [client-sessions](https://www.npmjs.com/package/client-sessions). The decryption and encryption is done automatically on each authenticated request and response respectively. Just setting a value of csession and sending the response is sufficient. Session creation (sendNewSession) and destruction (sendDestroySession) should be done with the methods below. Beware that all session data is transmitted on every request. This means that there should not be large amounts of data stored in the session. Use your database storage and place only a reference to it in the csession instead. 
 
 Usage:
 ```JavaScript
@@ -186,7 +188,7 @@ res.send();
 ```
 
 ###res.sae.sendNewSession(req, res, sessionData, sendData)
-Creates a new client-session with the given sessionData and sends the given sendData. The encrypted cookie used to do this serves as authentication cookie. This call ends the processing of a request like res.send(sendData) would do.
+Creates a new client-session with the given sessionData and sends the given sendData. This function should be used when a user succesfully authenticates for the first time. The encrypted cookie used to do this serves as authentication cookie for subsequent requests. This call ends the processing of a request like res.send(sendData) would do.
 ####Arguments:
 - req : The express request object.
 - res : The express response object.
@@ -202,6 +204,9 @@ Clears the client-side session and sends the given sendData. The encrypted cooki
 - sendData : The data that will be send in the response. Identical to the argument in res.send(sendData).
 
 ##Q&A
+
+###Will the library work if I don't use Angular.js?
+Some parts will some parts won't. Therefore it's highly recommended to use Angular.js. Angular.js is the first line prevention against XSS and provides some other features for which this library is preconfigured.
 
 ### Why do I need to put my secret in a file?
 Because secrets should not reside in (probably) public code. It's therefore advised that you put your secret in a separate file on your server _outside_ your project directory.
