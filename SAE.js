@@ -54,7 +54,8 @@ function getDefaults(){
 		//Serve cookies only over https TODO?
 		//How does this interact with proxy/other settings?
 		//Rename??
-		httpsOnlyCookie : false 
+		httpsOnlyCookie : false,
+		clientSessionsOpt : undefined
 	};
 }
 
@@ -302,7 +303,11 @@ module.exports = function(myoptions) {
 	var secretKeyFile = fs.readFileSync(opt["keyPath"], {encoding:'utf8'});
 	var secretKey = secretKeyFile.toString().split("\n")[0];
 	console.log(secretKey);
-	var csoptions = {
+	var csoptions;
+	if(opt["clientSessionsOpt"] !== undefined){
+		csoptions = opt["clientSessionsOpt"];
+	} else {
+		csoptions = {
 			cookieName : 'csession',
 			secret : secretKey,
 			duration: opt["sessionLifeTime"]*1000, //duration is in ms
@@ -313,7 +318,8 @@ module.exports = function(myoptions) {
 				httpOnly: true,
 				ephemeral: true //make it a session cookie
 			}
-	};
+		};
+	}
 	//Add reportRoute to exclusion of routes.
 	opt["excludedAuthRoutes"].push(opt["reportRoute"]);
 	var exclusionRegex = er.getExclusionRegex(opt["excludeAuthRoot"],opt["excludedAuthRoutes"]);

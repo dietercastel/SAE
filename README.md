@@ -147,7 +147,7 @@ Other routes to exclude from the authentication mechanism. Login route, register
 If you exclude for example "/login" all paths starting with "/login/" will ALSO be excluded from authentication. So "/login/admin","/login/some/thing/here" will also be excluded from the authentication middleware. 
 
 ###sessionLifeTime (Integer, Optional)
-Default value: `1200`
+Default value: `1200``
 Time in seconds a session and XSRF token should last. It's advised to set this session as short as possible. The default value makes the session last for 20 minutes as suggested by [OWASP](https://www.owasp.org/index.php/Session_Management#How_to_protect_yourself_4). The session will also end on closing of the browser.
 
 ###httpsOnlyCookie (Boolean, Optional)
@@ -159,6 +159,26 @@ It's highly recommended to use https and then enable this setting.
 Default value: `false`
 Removes frameguard protection. Only set this to true if you actually need frame/iframe inclusion.
 If you do, consider whitelisting the allowed domains in the Content Security Policy.
+
+###clientSessionOpt (Object, Optional)
+Default value: 
+```JavaScript
+{ 
+	cookieName : 'csession',
+	secret : 'key stored in opt["keyPath"]'
+	duration: opt["sessionLifeTime"]*1000, 
+	activeDuration: opt["sessionLifeTime"]*500, 
+	cookie: 
+		{
+			path:'/',  
+			secure: opt["httpsOnlyCookie"],
+			httpOnly: true,
+			ephemeral: true 
+		}
+}
+```
+Object to be used as options for [node-client-sessions](https://github.com/mozilla/node-client-sessions).
+As `secret` option by default the key stored in `keyPath` is used. It's NOT recommended to set this object yourself unless you really know what you are doing.
 
 ##Methods
 ###configure(app)
