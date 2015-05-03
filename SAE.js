@@ -51,10 +51,10 @@ function getDefaults(){
 		sessionLifeTime : 1200,
 		//enables or disables frameguard.
 		disableFrameguard : false,
-		//Serve cookies only over https TODO?
+		//Serve cookies only over https
 		//How does this interact with proxy/other settings?
-		//Rename??
-		httpsOnlyCookie : false,
+		secureCookie : false,
+		cookiePath : '/',
 		clientSessionsOpt : undefined
 	};
 }
@@ -150,7 +150,7 @@ function setXSRFToken(req,res,next){
 	console.log("SETTING anti XSRF TOKEN");
 	//Set the cookie so angular.js can read the token.
 	var headerValue = xsrfCookieName +'='+req.csrfToken()+'; Path=/';
-	if(res.sae.opt["httpsOnlyCookie"]){
+	if(res.sae.opt["secureCookie"]){
 		headerValue += "; Secure";
 	}
 	res.append('Set-Cookie', headerValue);
@@ -310,11 +310,15 @@ module.exports = function(myoptions) {
 		csoptions = {
 			cookieName : 'csession',
 			secret : secretKey,
+			// duration: 30*1000, //duration is in ms
+			// activeDuration: 25*1000, 
+			// absoluteExpiry: 60*1000, // 
 			duration: opt["sessionLifeTime"]*1000, //duration is in ms
-			activeDuration: opt["sessionLifeTime"]*500, // 
+			activeDuration: opt["sessionLifeTime"]*500, 
+			// absoluteExpiry: opt["sessionLifeTime"]*1000+12*60*60*1000, // +12h
 			cookie: {
-				path:'/',  
-				secure: opt["httpsOnlyCookie"],
+				path: opt["cookiePath"],  
+				secure: opt["secureCookie"],
 				httpOnly: true,
 				ephemeral: true //make it a session cookie
 			}
@@ -337,7 +341,7 @@ module.exports = function(myoptions) {
 	var csurfOptions = {
 		cookie : {
 			maxAge : opt["sessionLifeTime"]*1000,
-			secure : opt["httpsOnlyCookie"],
+			secure : opt["secureCookie"],
 			httpOnly: true
 		},
 		value : function (req){

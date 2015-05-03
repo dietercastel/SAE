@@ -64,8 +64,8 @@ At your logout **POST** route:
 ```
 
 ##Features
-- Centralised authentication on ALL routes except "/" plus those specified in the `excludedAuthRoutes` option.
-- Uses client-side sessions to enable proper REST services. 
+- Centralised session authentication on ALL routes except "/" plus those specified in the `excludedAuthRoutes` option.
+- Using Mozilla's [node-client-sessions](https://github.com/mozilla/node-client-sessions) to enable REST services. 
 - [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with Angular.js (works without ANY configuration). 
 - Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
 - [Content Security Policy](https://en.wikipedia.org/wiki/Content_Security_Policy) support to be configured manually in a file or to be used in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
@@ -109,6 +109,7 @@ File path relative to your project to a file describing your content security po
 Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
 
 This file can also be manually created using the following template in a file.
+Don't forget to remove the directives you don't need because a more specific directive will override a more general one.
 ```JavaScript
 {
     "default-src": [],
@@ -150,10 +151,16 @@ If you exclude for example "/login" all paths starting with "/login/" will ALSO 
 Default value: `1200``
 Time in seconds a session and XSRF token should last. It's advised to set this session as short as possible. The default value makes the session last for 20 minutes as suggested by [OWASP](https://www.owasp.org/index.php/Session_Management#How_to_protect_yourself_4). The session will also end on closing of the browser.
 
-###httpsOnlyCookie (Boolean, Optional)
+###secureCookie (Boolean, Optional)
 Default value: `false`
 Forces to only allow the session cookies to be used over a https connection.
 It's highly recommended to use https and then enable this setting.
+
+###cookiePath (Boolean, Optional)
+Default value: `'/'`
+The path on which the client-session cookie will be used.
+Making this path as restrictive as possible is good practice.
+This means that if you only serve authenticated users from a '/secretive' path you should set this setting to only be included when the url contains that path.
 
 ###disableFrameguard (Boolean, Optional)
 Default value: `false`
@@ -170,8 +177,8 @@ Default value:
 	activeDuration: opt["sessionLifeTime"]*500, 
 	cookie: 
 		{
-			path:'/',  
-			secure: opt["httpsOnlyCookie"],
+			path:opt["cookiePath"],  
+			secure: opt["secureCookie"],
 			httpOnly: true,
 			ephemeral: true 
 		}
