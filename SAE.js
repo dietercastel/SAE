@@ -48,7 +48,9 @@ function getDefaults(){
 		//List of Routes to exclude from authentication.
 		excludedAuthRoutes : [],
 		//Session (and anti-XSRF token) lifetime in seconds.
-		sessionLifeTime : 1200,
+		sessionLifeTime : 1200, //20 minutes
+		sessionRefreshTime : 600, //10 minutes
+		sessionAbsoluteExpiry : 43200, //12 hours
 		//enables or disables frameguard.
 		disableFrameguard : false,
 		//Serve cookies only over https
@@ -170,7 +172,7 @@ function sendNewSession(req, res, sessionData, sendData){
 	Object.keys(sessionData).forEach(function(name){
 		req.csession[name] = sessionData[name];
 	});
-	req.csession["authenticated"] = true;
+	req.csession["expiresAbsolutelyAt"] = Date.now() + req.sae.opt["sessionAbsoluteExpiry"]*1000;
 	console.log("sending:\n" + util.inspect(req.csession));
 	//Reset XSRF token is done autmatically on each request.
 	//and send the data.
@@ -246,8 +248,8 @@ function validateSession(authLogStream){
 		console.log("#########This url is: " + req.url);
 		console.log("#########This path is: " + req.path);
 		console.log("csession:\n"+util.inspect(req.csession));
-		//Unwrap csession and check authenticated field
-		if(req.csession !== undefined && req.csession["authenticated"]){
+		//Unwrap csession and check absolute expiry field
+		if(req.csession !== undefined && Date.now() <= req.csession["expiresAbsolutelyAt"]){
 			console.log("Authenticated request.");
 			//Succesful auth let request go trough.
 			continueAuthedRoute(req,res,next);
@@ -310,12 +312,8 @@ module.exports = function(myoptions) {
 		csoptions = {
 			cookieName : 'csession',
 			secret : secretKey,
-			// duration: 30*1000, //duration is in ms
-			// activeDuration: 25*1000, 
-			// absoluteExpiry: 60*1000, // 
 			duration: opt["sessionLifeTime"]*1000, //duration is in ms
-			activeDuration: opt["sessionLifeTime"]*500, 
-			// absoluteExpiry: opt["sessionLifeTime"]*1000+12*60*60*1000, // +12h
+			activeDuration: opt["sessionRefreshTime"]*1000, 
 			cookie: {
 				path: opt["cookiePath"],  
 				secure: opt["secureCookie"],

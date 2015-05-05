@@ -135,7 +135,7 @@ File path relative to your project to the file where failed authentication repor
 
 ###JSONPrefixing (Boolean, Optional)
 Default value: `true`
-Determines whether to prefix JSON body data to prevent [this](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/) attack. The prefix is automatically stripped by angular.js at the client side.
+Determines whether to prefix JSON body data to prevent [this](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/) attack. The prefix is automatically stripped by Angular.js at the client side.
 
 ###excludeAuthRoot (Boolean, Optional)
 Default value: `true`
@@ -148,8 +148,16 @@ Other routes to exclude from the authentication mechanism. Login route, register
 If you exclude for example "/login" all paths starting with "/login/" will ALSO be excluded from authentication. So "/login/admin","/login/some/thing/here" will also be excluded from the authentication middleware. 
 
 ###sessionLifeTime (Integer, Optional)
-Default value: `1200``
-Time in seconds a session and XSRF token should last. It's advised to set this session as short as possible. The default value makes the session last for 20 minutes as suggested by [OWASP](https://www.owasp.org/index.php/Session_Management#How_to_protect_yourself_4). The session will also end on closing of the browser.
+Default value: `1200`
+Time in seconds a session should last. It's advised to set this session as short as possible. The default value makes the session last for 20 minutes as suggested by [OWASP](https://www.owasp.org/index.php/Session_Management#How_to_protect_yourself_4). The session will also end on closing of the browser.
+
+###sessionRefreshTime (Integer, Optional)
+Default value: `600`
+Time in seconds a session will be extended with if the user remains active. Each request can extend the session lifetime if it's nearing it's end. Unless the session has passed it's absolute expiry time.
+
+###sessionAbsoluteExpiry (Integer, Optional)
+Default value: `43200`
+Time in seconds after which a session will certainly expire. A session can no longer be refreshed if it has passed this time. By default this is 12 hours. It prevents a stolen or 'lost' session from being missused indefintelty. 
 
 ###secureCookie (Boolean, Optional)
 Default value: `false`
