@@ -81,6 +81,7 @@ The path to your project floder. `__dirname` in your main file can often be used
 ###keyPath (String, REQUIRED)
 The absolute path to a file containing the server-side key for encrypting the client-side sessions.
 Example: `/path/to/keyfile.key` pointing to a file containing only `mysupersecretkeyiwillbeusing`.
+Do not put this file under version control! This feauture is espicially intended to avoid placing private data into open by accident for example on a public github repository. Be wary of your keys/secrets/private info!
 
 ###failedAuthFunction (function, REQUIRED)
 A function that gets executed when a request is not proberly authenticated. 

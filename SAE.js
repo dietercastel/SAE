@@ -137,13 +137,8 @@ function configureCspReport(app, opt, cspopt){
 	});
 }
 
-/*
- * Configures the authentication with the given options.
- */
-function configureAuth(app, opt, exclusionRegex){
-		var authLogStream = getLogStream("authReportsLog",opt);
-		app.use(exclusionRegex, validateSession(authLogStream));
-}
+
+//XSRF RELATED FUNCTIONS
 
 /*
  * Adds an anti-XSRF double submit cookie to the given response.
@@ -160,6 +155,16 @@ function setXSRFToken(req,res,next){
 	if(next !== undefined){
 		next();
 	}
+}
+
+//SESSION RELATED FUNCTIONS
+
+/*
+ * Configures the authentication with the given options.
+ */
+function configureAuth(app, opt, exclusionRegex){
+		var authLogStream = getLogStream("authReportsLog",opt);
+		app.use(exclusionRegex, validateSession(authLogStream));
 }
 
 /*
