@@ -250,5 +250,5 @@ Because secrets should not reside in (probably) public code. It's therefore advi
 ### Why shouldn't I use a server side templating engine?
 See [this explanation](https://docs.angularjs.org/guide/security#mixing-client-side-and-server-side-templates).
 
-### Why aren't 'GET', 'HEAD', 'OPTIONS' request checked against XSRF?
+### Why aren't 'GET', 'HEAD', 'OPTIONS' requests checked against XSRF?
 Because neither of these should be able to execute a sensitive operation, they are considered [safe methods](http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.1.1). If they do in your application you should redesign it to fit the proper HTTP specifications.
