@@ -48,7 +48,7 @@ function getDefaults(){
 		//List of Routes to exclude from authentication.
 		excludedAuthRoutes : [],
 		//Session (and anti-XSRF token) lifetime in seconds.
-		sessionLifeTime : 1200, //20 minutes
+		sessionIdleTimeout : 1200, //20 minutes
 		sessionRefreshTime : 600, //10 minutes
 		sessionAbsoluteExpiry : 43200, //12 hours
 		//enables or disables frameguard.
@@ -317,7 +317,7 @@ module.exports = function(myoptions) {
 		csoptions = {
 			cookieName : 'csession',
 			secret : secretKey,
-			duration: opt["sessionLifeTime"]*1000, //duration is in ms
+			duration: opt["sessionIdleTimeout"]*1000, //duration is in ms
 			activeDuration: opt["sessionRefreshTime"]*1000, 
 			cookie: {
 				path: opt["cookiePath"],  
@@ -343,7 +343,7 @@ module.exports = function(myoptions) {
 	}
 	var csurfOptions = {
 		cookie : {
-			maxAge : opt["sessionLifeTime"]*1000,
+			maxAge : opt["sessionIdleTimeout"]*1000,
 			secure : opt["secureCookie"],
 			httpOnly: true
 		},
