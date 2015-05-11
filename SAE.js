@@ -55,7 +55,7 @@ function getDefaults(){
 		disableFrameguard : false,
 		//Serve cookies only over https
 		//How does this interact with proxy/other settings?
-		secureCookie : false,
+		secureCookie : true,
 		cookiePath : '/',
 		clientSessionsOpt : undefined
 	};
