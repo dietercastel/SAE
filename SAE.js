@@ -172,6 +172,8 @@ function configureAuth(app, opt, exclusionRegex){
  */
 function sendNewSession(req, res, sessionData, sendData){
 	console.log("newSession");
+	//Clear csession explicitly
+	req.csession.reset();
 	//Set session data in req!!!
 	//Must explicity use req.cession
 	Object.keys(sessionData).forEach(function(name){
