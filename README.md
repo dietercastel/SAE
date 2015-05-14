@@ -1,6 +1,6 @@
 # Sec-Angular-Express
 
-[Node.js](https://nodejs.org) module to ease the development of a *secure* [Express](http://expressjs.com/)+[Angular.js](https://angularjs.org/) web application. Angular.js provides a couple of nice features that raise the security bar significantly. This module tries to make good use of these features with as little effort as possible for developers.
+[Node.js](https://nodejs.org) module to ease the development of a *secure* [Express](http://expressjs.com/)+[AngularJS](https://angularjs.org/) web application. AngularJS provides a couple of nice features that raise the security bar significantly. This module tries to make good use of these features with as little effort as possible for developers. The focus of this module is client-side web security it does NOT cover various server-side risks.
 
 ##Quick start
 At the very least you need to do three things:
@@ -66,7 +66,7 @@ At your logout **POST** route:
 ##Features
 - Centralised session authentication on ALL routes except "/" plus those specified in the `excludedAuthRoutes` option.
 - Using Mozilla's [node-client-sessions](https://github.com/mozilla/node-client-sessions) to enable REST services. 
-- [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with Angular.js (works without ANY configuration). 
+- [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with AngularJS (works without ANY configuration). 
 - Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
 - [Content Security Policy](https://en.wikipedia.org/wiki/Content_Security_Policy) support to be configured manually in a file or to be used in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
 - Disabeled x-powered-by header.
@@ -136,12 +136,14 @@ File path relative to your project to the file where failed authentication repor
 
 ###JSONPrefixing (Boolean, Optional)
 Default value: `true`
-Determines whether to prefix JSON body data to prevent [this](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/) attack. The prefix is automatically stripped by Angular.js at the client side.
+Determines whether to prefix JSON body data to prevent [this](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/) attack. The prefix is automatically stripped by AngularJS at the client side.
 
 ###excludeAuthRoot (Boolean, Optional)
 Default value: `true`
-Determines whether to exclude the root path "/" from the authentication mechanism.
+Determines whether to exclude the root path "/" from the session authentication mechanism.
 Only the "/" path is excluded when true. Not "/somethinghere" nor "/some/thing/here".
+We assume that "/" is used as public entry point for the web application so it's default value is true.
+Setting this to false would result in making your application inaccesible to anyone without a valid session.
 
 ###excludedAuthRoutes ([String], Optional)
 Default value: `[]`
@@ -241,8 +243,8 @@ Clears the client-side session and sends the given sendData. The encrypted cooki
 
 ##Q&A
 
-###Will the library work if I don't use Angular.js?
-Some parts will some parts won't. Therefore it's highly recommended to use Angular.js. Angular.js is the first line prevention against XSS and provides some other features for which this library is preconfigured.
+###Will the library work if I don't use AngularJS?
+Some parts will some parts won't. Therefore it's highly recommended to use AngularJS. AngularJS is the first line prevention against XSS and provides some other features for which this library is preconfigured.
 
 ### Why do I need to put my secret in a file?
 Because secrets should not reside in (probably) public code. It's therefore advised that you put your secret in a separate file on your server _outside_ your project directory.

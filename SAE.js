@@ -171,6 +171,10 @@ function configureAuth(app, opt, exclusionRegex){
  *	Sends a new client-session with the given session and send data.
  */
 function sendNewSession(req, res, sessionData, sendData){
+	if(req.method !== "POST"){
+		throw new Error("Starting a new session with sendNewSession should always be done with a POST request.");
+	}
+	console.log(req.method);
 	console.log("newSession");
 	//Clear csession explicitly
 	req.csession.reset();
@@ -191,7 +195,11 @@ function sendNewSession(req, res, sessionData, sendData){
  * Sends the given data and removes the client-session cookie.
  */
 function sendDestroySession(req, res, sendData){
+	if(req.method !== "POST"){
+		throw new Error("Destroying a session with sendDestroySession should always be done with a POST request.");
+	}
 	//Reset XSRF token is done autmatically on each request.
+	console.log(req.route.method);
 	console.log("csession before" + util.inspect(req.csession));
 	req.csession.reset();
 	console.log("csession after" + util.inspect(req.csession));
