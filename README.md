@@ -226,7 +226,7 @@ res.send();
 ```
 
 ###res.sae.sendNewSession(req, res, sessionData, sendData)
-Creates a new client-session with the given sessionData and sends the given sendData. This function should be used when a user succesfully authenticates for the first time. The encrypted cookie used to do this serves as authentication cookie for subsequent requests. This call ends the processing of a request like res.send(sendData) would do.
+Creates a new client-session with the given sessionData and sends the given sendData. This function should be used when a user succesfully authenticates for the first time. The encrypted cookie used to do this serves as authentication cookie for subsequent requests. This call ends the processing of a request like res.send(sendData) would do. Because this function changes state it should only be used in a POST method route. An error will be thrown otherwise.
 ####Arguments:
 - req : The express request object.
 - res : The express response object.
@@ -234,7 +234,7 @@ Creates a new client-session with the given sessionData and sends the given send
 - sendData : The data that will be send in the response. Identical to the argument in res.send(sendData).
 
 ###res.sae.sendDestroySession(req,res,sendData);
-Clears the client-side session and sends the given sendData. The encrypted cookie will not contain any more data and will not be able to authenticate a request. This call ends the processing of a request like res.send(sendData) would do.
+Clears the client-side session and sends the given sendData. The encrypted cookie will not contain any more data and will not be able to authenticate a request. This call ends the processing of a request like res.send(sendData) would do. Because this function changes state it should only be used in a POST method route. An error will be thrown otherwise.
 
 ####Arguments:
 - req : The express request object.
