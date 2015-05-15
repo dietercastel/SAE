@@ -13,11 +13,58 @@ var csurf = require('csurf');
 var clientSession = require('client-sessions');
 var frameguard = require('frameguard'); 
 var dontSniffMIME = require('dont-sniff-mimetype');
+var async = require('async');
+// var cspReportQueue = async.queue(updateNewCSP, 1);
+
+// function(task, callback){
+// 	var newCspFileName = task.filename;
+// 	var directive = task.directive;
+// 	var uri = task.uri;
+//
+// 	jf.readFile(newCspFileName, function(err, obj){
+// 			
+// 	});
+// 	//Only actual remote resources NO inline!!
+// 	// directive = report['effective-directive'];
+// 	var newArr = newCSP[directive] || [];
+// 	async.series([
+// 			function(callback){
+// 				console.log(newArr);
+// 				newArr.push(report['blocked-uri']);
+// 				callback(null, report['blocked-uri']);
+// 			},
+// 			function(callback){
+// 				console.log(newArr);
+// 				newArr = newArr.filter(onlyUnique)
+// 		callback(null, newArr.length);
+// 			},
+// 			function(callback){
+// 				console.log("newArr == " + newArr);
+// 				newCSP[directive] = newArr;
+// 				callback(null, newCSP[directive].length);
+// 			},
+// 			function(callback){
+// 				jf.writeFile(newCspFileName, newCSP, function(err) {
+// 					console.log(err);
+// 				});
+// 				callback(null, 'done');
+// 			},
+// 			function(callback){
+// 				console.log("newCSP == " + util.inspect(newCSP));
+// 				callback(null, '');
+// 			}
+// 	],
+// 		function(err, results){
+// 			console.log(results);
+// 		});
+// }
 
 //SETTINGS AND OPTIONS RELATED
 var xsrfCookieName = "XSRF-TOKEN";
 var xsrfHeaderName = "X-XSRF-TOKEN";
 var requiredOptions = ["projectPath","keyPath","failedAuthFunction"];
+var newCSP;
+
 function getDefaults(){
 	return { 
 		//REQUIRED!!
@@ -35,6 +82,7 @@ function getDefaults(){
 		//Csp file to use. Can be generated with grunt-csp-express.
 		//Relative to projectPath
 		cspFile: '/csp.json',
+		newCspFile: '/newcsp.json',
 		//File to store csp reports in.
 		cspReportsLog : '/cspReports.log',
 		//File to store auth reports in.
@@ -111,8 +159,6 @@ morgan.token('xsrftoken', function(req, res){
  * Configure and return the content-security-policy middleware.
  */
 function useCSP(cspopt,opt){
-	//TODO: see if this is necessary
-	cspopt["connect-src"] = csp.SRC_SELF; 
 	cspopt["report-uri"] = opt["proxyPrefix"] + opt["reportRoute"];
 	cspopt["report-only"] = opt["cspReportOnly"];
 	console.log("CSP: using following configuration:");
@@ -129,9 +175,85 @@ function useCSP(cspopt,opt){
 function configureCspReport(app, opt, cspopt){
 	var cspLogStream = getLogStream("cspReportsLog", opt);
 	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
-	app.post(opt["reportRoute"], cspReportParser, morgan(':date[clf]] :cspreport', {stream : cspLogStream}));
+	app.post(opt["reportRoute"], cspReportParser);
+	app.post(opt["reportRoute"], morgan('{ "time": :date[clf], "data": :cspreport} ', {stream : cspLogStream}));
 	app.post(opt["reportRoute"], function(req,res){
-		//No need to get passed this route after logging.
+		console.log("++++++++++++++++++++++++++++++++++++++++++");
+		var report = req.body["csp-report"];
+		// console.log(util.inspect(report));
+		//TODO:
+		//Only allow new CSP building in development?
+		if(app.get('env') === "development"){
+			console.log("DEVELOPMENT");
+			if(report['blocked-uri'] !== ''){
+				console.log("NOT EMPTY");
+				// var newCspFileName = path.join(opt["projectPath"],opt["newCspFile"]);
+				// try{ 
+				// 	//Blocking file read needed.
+				// 	cspopt = jf.readFileSync(newCspFileName);
+				// } catch (err) {
+				// 	console.log("CSP: can't read new csp file.");
+				// }
+				// //Only actual remote resources NO inline!!
+				// directive = report['effective-directive'];
+				// if(cspopt[directive] === undefined){
+				// 	cspopt[directive] = [];
+				// }
+				// cspopt[directive].push(report['blocked-uri']);
+				// console.log(directive + "+= " + report['blocked-uri'] + " ===  " + cspopt[directive]);
+				// cspopt[directive] = cspopt[directive].filter(onlyUnique);
+				// console.log("final res " + cspopt[directive]);
+				// jf.writeFile(newCspFileName, cspopt, function(err) {
+				// 	  console.log(err);
+				// });
+				var newCspFileName = path.join(opt["projectPath"],opt["newCspFile"]);
+				//Only actual remote resources NO inline!!
+				directive = report['effective-directive'];
+				var newArr = newCSP[directive] || [];
+				async.series([
+					function(callback){
+						console.log(newArr);
+						newArr.push(report['blocked-uri']);
+						callback(null, report['blocked-uri']);
+					},
+					function(callback){
+						console.log(newArr);
+						newArr = newArr.filter(onlyUnique)
+						callback(null, newArr.length);
+					},
+					function(callback){
+						console.log("newArr == " + newArr);
+						newCSP[directive] = newArr;
+						callback(null, newCSP[directive].length);
+					},
+					function(callback){
+						jf.writeFile(newCspFileName, newCSP, function(err) {
+							  console.log(err);
+						});
+						callback(null, 'done');
+					},
+					function(callback){
+						console.log("newCSP == " + util.inspect(newCSP));
+						callback(null, '');
+					}
+				],
+				function(err, results){
+					console.log(results);
+				});
+				// console.log("blocked-uri == " + report['blocked-uri']);
+				// newArr[newArr.length] = report['blocked-uri'];
+				// newArr.push(report['blocked-uri']);
+				// console.log("newnewArr == " + newArr);
+				// newArr = newArr.filter(onlyUnique);
+				// console.log(newArr);
+				// console.log(directive + "+= " + report['blocked-uri'] + " ===  " + newCSP[directive]);
+				// console.log("final res " + newCSP[directive]);
+				// jf.writeFile(newCspFileName, newCSP, function(err) {
+				// 	  console.log(err);
+				// });
+			}
+		}
+		//No need to get passed this route after processing.
 		res.status(200);
 		res.send();
 	});
@@ -313,6 +435,12 @@ function configureFrameguard(app, cspopt, opt){
 	}
 }
 
+/**
+ * VARIOUS FUNCTIONS
+ */
+function onlyUnique(value, index, self) { 
+	return self.indexOf(value) === index;
+}
 
 module.exports = function(myoptions) {
 	var def= getDefaults();
@@ -351,6 +479,10 @@ module.exports = function(myoptions) {
 		console.log("CSP: no proper path provided, using starter options.");
 		cspopt = csp.STARTER_OPTIONS;
 	}
+	newCSP = cspopt;
+	newCspFileName = path.join(opt["projectPath"],opt["newCspFile"]);
+	jf.writeFileSync(newCspFileName, newCSP);
+
 	var csurfOptions = {
 		cookie : {
 			maxAge : opt["sessionIdleTimeout"]*1000,
