@@ -132,6 +132,7 @@ function configureCspReport(app, opt, cspopt){
 	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
 	app.post(opt["reportRoute"], cspReportParser);
 	app.post(opt["reportRoute"], morgan('{ "time": :date[clf], "data": :cspreport} ', {stream : cspLogStream}));
+	console.log(app.get('env'));
 	
 	var cspup = updateCSP({
 		"env" : app.get('env'),
