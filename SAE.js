@@ -9,49 +9,11 @@ var morgan = require('morgan');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var er = require('./lib/excluderegex');
+var updateCSP = require('./lib/updateCSP');
 var csurf = require('csurf');
 var clientSession = require('client-sessions');
 var frameguard = require('frameguard'); 
 var dontSniffMIME = require('dont-sniff-mimetype');
-var async = require('async');
-var cspReportQueue = async.queue(updateNewCSP, 1);
-
-function updateNewCSP(task, callback){
-	var newCspFileName = task.filename;
-	var directive = task.directive;
-	var uri = task.uri;
-
-	jf.readFile(newCspFileName, function(err, newCSP){
-		var newArr;
-		//can be a single string or array!!
-		if(typeof newCSP[directive] === "string"){
-			newArr = [newCSP[directive]];
-		} else {
-			newArr = newCSP[directive];
-		}
-		async.series([
-				function(callb){
-					console.log(newArr);
-					var pushed = newArr.push(uri);
-					var filtered = newArr.filter(onlyUnique);
-					console.log("newArr == " + newArr);
-					newCSP[directive] = newArr;
-					//When adding is go next call for writing.
-					callb(null, newCSP[directive]);
-				},
-				function(callb){
-					jf.writeFile(newCspFileName, newCSP, function(err) {
-						console.log(err);
-						callb(null, 'done');
-					});
-				}
-		],
-		function(err, results){
-			console.log(results);
-			callback();
-		});
-	});
-}
 
 //SETTINGS AND OPTIONS RELATED
 var xsrfCookieName = "XSRF-TOKEN";
@@ -170,26 +132,14 @@ function configureCspReport(app, opt, cspopt){
 	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
 	app.post(opt["reportRoute"], cspReportParser);
 	app.post(opt["reportRoute"], morgan('{ "time": :date[clf], "data": :cspreport} ', {stream : cspLogStream}));
+	
+	var cspup = updateCSP({
+		"env" : app.get('env'),
+		"filename" : path.join(opt["projectPath"],opt["newCspFile"])
+	});
+
+	app.post(opt["reportRoute"], cspup);
 	app.post(opt["reportRoute"], function(req,res){
-		console.log("++++++++++++++++++++++++++++++++++++++++++");
-		var report = req.body["csp-report"];
-		// console.log(util.inspect(report));
-		//TODO:
-		//Only allow new CSP building in development?
-		if(app.get('env') === "development"){
-			console.log("DEVELOPMENT");
-			if(report['blocked-uri'] !== ''){
-				console.log("NOT EMPTY");
-				var tsk = {
-					"filename"	: path.join(opt["projectPath"],opt["newCspFile"]),
-					"directive" : report['effective-directive'],
-					"uri" : report['blocked-uri']
-				}
-				cspReportQueue.push(tsk, function(){
-					console.log("FINISHED TSK:" + util.inspect(tsk));
-				});
-			}
-		}
 		//No need to get passed this route after processing.
 		res.status(200);
 		res.send();
@@ -371,13 +321,6 @@ function configureFrameguard(app, cspopt, opt){
 	}
 }
 
-/**
- * VARIOUS FUNCTIONS
- */
-function onlyUnique(value, index, self) { 
-	return self.indexOf(value) === index;
-}
-
 module.exports = function(myoptions) {
 	var def= getDefaults();
 	var opt= overrideDefaults(def, myoptions); 
@@ -415,6 +358,7 @@ module.exports = function(myoptions) {
 		console.log("CSP: no proper path provided, using starter options.");
 		cspopt = csp.STARTER_OPTIONS;
 	}
+
 	newCSP = cspopt;
 	newCspFileName = path.join(opt["projectPath"],opt["newCspFile"]);
 	jf.writeFileSync(newCspFileName, newCSP);
