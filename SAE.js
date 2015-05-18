@@ -250,8 +250,13 @@ function continueAuthedRoute(req, res, next){
 				//nop
 			}
 		}
+		//TODO: check 
 		console.log("######CSP:\n" + res.get('Content-Security-Policy'));
 		//Execute original send();
+		// Test this
+		// if(res.get('Set-Cookie').length > 4000){
+		// 	console.log("WARNING: cookie is close to exceeding common size limit");
+		// }
 		sendRef.call(this,newStr);
 	};
 	next();

@@ -202,7 +202,7 @@ Default value:
 }
 ```
 Object to be used as options for [node-client-sessions](https://github.com/mozilla/node-client-sessions).
-As `secret` option by default the key stored in `keyPath` is used. It's NOT recommended to set this object yourself unless you really know what you are doing.
+As `secret` option by default the key stored in `keyPath` is used. It's NOT recommended to set this object yourself unless you really know what you are doing with relation to secure session management.
 
 ##Methods
 ###configure(app)
