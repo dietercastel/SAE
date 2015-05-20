@@ -6,9 +6,7 @@ var jf = require('jsonfile');
 var util = require('util');
 var path = require('path');
 var morgan = require('morgan');
-// TODO: if there is time migrate to other logger with good JSON loggin
-// Maybe winston
-// var winston = require('winston');
+var bunyan = require('bunyan');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var er = require('./lib/excluderegex');
