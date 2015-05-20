@@ -6,6 +6,9 @@ var jf = require('jsonfile');
 var util = require('util');
 var path = require('path');
 var morgan = require('morgan');
+// TODO: if there is time migrate to other logger with good JSON loggin
+// Maybe winston
+// var winston = require('winston');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var er = require('./lib/excluderegex');
@@ -96,7 +99,7 @@ function overrideDefaults(defaults, options){
 //MORGAN LOGGING SETUP
 //Custom :cspreport logging token with morgan
 morgan.token('cspreport', function(req, res){ 
-	return '\n'+util.inspect(req.body["csp-report"]).toString(); 
+	return '\n'+util.inspect(req.body["csp-report"]); 
 });
 //Custom :failedAuth logging token with morgan
 morgan.token('failedAuth', function(req, res){ 
