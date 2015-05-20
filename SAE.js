@@ -5,7 +5,6 @@ var csp = require('content-security-policy');
 var jf = require('jsonfile');
 var util = require('util');
 var path = require('path');
-var morgan = require('morgan');
 var bunyan = require('bunyan');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
@@ -65,14 +64,43 @@ function getDefaults(){
 	};
 }
 
-/*
- * Returns a log stream of the given type with the given options. 
- */
-function getLogStream(logType, opt){
+//BUNYAN LOGGIN SETUP
+//Serializers for different logs.
+var bunyanSerializers = {
+	"cspReportsLog": function(req) {
+		return req.body["csp-report"];
+	},
+	"authReportsLog": function(req){
+		return {
+			"url" : req.url,
+			"csession" : req.csession,
+			"headers" : req.headers,
+			"cookies" : req.cookies
+		};
+	},
+	"xsrfReportsLog": function(req){
+		return {
+			"url" : req.url,
+			"body" : req.body,
+			"xsrf-token" : req.get(xsrfHeaderName),
+			"tokenCookie" : req.cookies[xsrfCookieName]
+		};
+	} 
+};
+
+//Returns a new logger of the given type with the given settings
+function getBunyanLogger(logType, opt){
 	var logPath = path.join(opt["projectPath"],opt[logType]);
-	return  fs.createWriteStream(logPath, {flags: 'a'});
+	return bunyan.createLogger({
+		name: logType, 
+		serializers: { req : bunyanSerializers[logType] },
+		streams : [
+			{path: logPath}	
+		]
+	});
 }
 
+//VARIOUS
 /* 
  * Overrides the default options with the user supplied options.
  * Throws an error if not all required options are provided.
@@ -94,22 +122,6 @@ function overrideDefaults(defaults, options){
 	return resultObject;
 }
 
-//MORGAN LOGGING SETUP
-//Custom :cspreport logging token with morgan
-morgan.token('cspreport', function(req, res){ 
-	return '\n'+util.inspect(req.body["csp-report"]); 
-});
-//Custom :failedAuth logging token with morgan
-morgan.token('failedAuth', function(req, res){ 
-	return '\n'+req.url+'\n'+util.inspect(req.csession);
-});
-//Custom :xsrftoken logging token with morgan
-morgan.token('xsrftoken', function(req, res){ 
-	var token = req.get(xsrfHeaderName);
-	var tokenCookie = req.cookies[xsrfCookieName];
-	return '\n'+"token:"+token+'\n'+"cookie:"+tokenCookie; 
-});
-
 //CSP RELATED FUNCTIONS
 /*
  * Configure and return the content-security-policy middleware.
@@ -129,10 +141,13 @@ function useCSP(cspopt,opt){
  * Configure CSP reporting route with the given options.
  */
 function configureCspReport(app, opt, cspopt){
-	var cspLogStream = getLogStream("cspReportsLog", opt);
+	var cspReportLogger = getBunyanLogger("cspReportsLog", opt);
 	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
 	app.post(opt["reportRoute"], cspReportParser);
-	app.post(opt["reportRoute"], morgan('{ "time": :date[clf], "data": :cspreport} ', {stream : cspLogStream}));
+	app.post(opt["reportRoute"], function(req, res, next){
+		cspReportLogger.info({req: req, env: app.get('env')}, "Received CSP report.");
+		next();
+	});
 	console.log(app.get('env'));
 	
 	var cspup = updateCSP({
@@ -173,8 +188,8 @@ function setXSRFToken(req,res,next){
  * Configures the authentication with the given options.
  */
 function configureAuth(app, opt, exclusionRegex){
-		var authLogStream = getLogStream("authReportsLog",opt);
-		app.use(exclusionRegex, validateSession(authLogStream));
+		var authLogger = getBunyanLogger("authReportsLog",opt);
+		app.use(exclusionRegex, validateSession(authLogger));
 }
 
 /*
@@ -266,7 +281,7 @@ function continueAuthedRoute(req, res, next){
 /*
  * Returns a session validation function that logs to the given stream.
  */
-function validateSession(authLogStream){
+function validateSession(authLogger){
 	/*
 	 * If session is valid
 	 *	Executes next()
@@ -287,7 +302,7 @@ function validateSession(authLogStream){
 		}
 		//Handle bad request.
 		console.log("Auth Failed");
-		morgan(':date[clf]] :failedAuth', {stream : authLogStream});
+		authLogger.info({req: req}, "Authentication failed");
 		req.sae.opt.failedAuthFunction(req, res);
 		return;	
 	};
@@ -296,13 +311,13 @@ function validateSession(authLogStream){
 /*
  * Returns an xsrf error handling function with the given log stream.
  */
-function handleWrongXSRFToken(xsrfLogStream){
+function handleWrongXSRFToken(xsrfLogger){
 	/* 
 	 * Handles a wrong XSRF token error thrown by csurf:
 	 *
 	 * If the token was not found within the request or 
 	 * the value provided does not match the value within the session, 
-	 * then the request should be aborted, token shhttp://www.theonion.com/articles/hillary-clinton-to-nation-do-not-fuck-this-up-for,38416/ould be reset and 
+	 * then the request should be aborted, token sould be reset and 
 	 * the event logged as a potential CSRF attack in progress. 
 	 */
 	return function(err, req, res, next) {
@@ -310,7 +325,7 @@ function handleWrongXSRFToken(xsrfLogStream){
 			return next(err);
 		}
 		//Log potential xsrf attack
-		morgan(':date[clf]] :xsrftoken', {stream : xsrfLogStream});
+		xsrfLogger.error({req: req}, "Potential XSRF attack!!");
 		console.log("WRONG CSRFTOKEN");
 		console.log(util.inspect(err));
 		//Reset XSRF token is done autmatically on each request.
@@ -365,7 +380,6 @@ module.exports = function(myoptions) {
 		console.log("CSP: no proper path provided, using starter options.");
 		cspopt = csp.STARTER_OPTIONS;
 	}
-
 	newCSP = cspopt;
 	newCspFileName = path.join(opt["projectPath"],opt["newCspFile"]);
 	jf.writeFileSync(newCspFileName, newCSP);
@@ -404,8 +418,9 @@ module.exports = function(myoptions) {
 			configureAuth(app,opt,exclusionRegex);
 		},
 		handleErrors: function(app){
-			var xsrfLogStream = getLogStream("xsrfReportsLog", opt);
-			app.use(handleWrongXSRFToken(xsrfLogStream));
+			var xsrfLogger = getBunyanLogger("xsrfReportsLog", opt);
+			xsrfLogger.level("error");
+			app.use(handleWrongXSRFToken(xsrfLogger));
 		},
 		defaults: def,
 		options: opt,
