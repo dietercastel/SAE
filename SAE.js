@@ -10,6 +10,7 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var er = require('./lib/excluderegex');
 var updateCSP = require('./lib/updateCSP');
+var pwCheck = require('./lib/pwCheck');
 var csurf = require('csurf');
 var clientSession = require('client-sessions');
 var frameguard = require('frameguard'); 
@@ -53,7 +54,7 @@ function getDefaults(){
 		//Session (and anti-XSRF token) lifetime in seconds.
 		sessionIdleTimeout : 1200, //20 minutes
 		sessionRefreshTime : 600, //10 minutes
-		sessionAbsoluteExpiry : 43200, //12 hours
+		sessionAbsoluteExpiry : 21600, //6 hours
 		//enables or disables frameguard.
 		disableFrameguard : false,
 		//Serve cookies only over https
@@ -115,6 +116,7 @@ function overrideDefaults(defaults, options){
 		if(reqIdx >= 0){
 			stillRequired.splice(reqIdx,1);
 		}
+		//TODO: generate warnings for insecure settings?
 	});
 	if(stillRequired.length !== 0 ){
 		throw new Error("The following options are required: "+stillRequired);
@@ -343,12 +345,25 @@ function configureFrameguard(app, cspopt, opt){
 	}
 }
 
+/*
+ * Checks if secret is sufficiently long and strong with pwCheck
+ * Raises error's if it's not.
+ */
+function checkSecretKey(secretKey){
+	if(secretKey === undefined){
+		throw new Error("Can't find a secret to use. Check the keyPath option of SAE and verify the file you specify exists.");
+	}
+	if(!pwCheck.isValid(secretKey)){
+		throw new Error("The secret you used is not valid. It must be at LEAST 16 charachters long and include at least two words (letter sequences separated by a non-letter sequence).");
+	}
+}
+
 module.exports = function(myoptions) {
 	var def= getDefaults();
 	var opt= overrideDefaults(def, myoptions); 
 	var secretKeyFile = fs.readFileSync(opt["keyPath"], {encoding:'utf8'});
 	var secretKey = secretKeyFile.toString().split("\n")[0];
-	console.log(secretKey);
+	checkSecretKey(secretKey);
 	var csoptions;
 	if(opt["clientSessionsOpt"] !== undefined){
 		csoptions = opt["clientSessionsOpt"];
