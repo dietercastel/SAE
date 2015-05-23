@@ -144,7 +144,15 @@ function useCSP(cspopt,opt){
  */
 function configureCspReport(app, opt, cspopt){
 	var cspReportLogger = getBunyanLogger("cspReportsLog", opt);
-	var cspReportParser = bodyParser.json({type: 'application/csp-report'});
+	var cspReportParser = bodyParser.json({type: function(req){
+		if(req.get('content-type') === 'application/csp-report'){
+			return true;	
+		}
+		if(req.get('content-type') === 'application/json'){
+			return true;
+		}
+		return false;
+	}});
 	app.post(opt["reportRoute"], cspReportParser);
 	app.post(opt["reportRoute"], function(req, res, next){
 		cspReportLogger.info({req: req, env: app.get('env')}, "Received CSP report.");
