@@ -280,6 +280,27 @@ function continueAuthedRoute(req, res, next){
 	next();
 }
 
+
+/*
+ * Provides support for Internet Explor's divergent CSP headers.
+ */
+function provideIECSPHeaders(req, res, next){
+	console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+	var csp = res.get('Content-Security-Policy');
+	console.log("############################" +csp);
+	var reportCsp = res.get('Content-Security-Policy-Report-Only');
+	console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$" +csp);
+	if(csp !== undefined){
+		console.log("X-CSP on: "+csp);
+		res.set('X-Content-Security-Policy', csp);
+	}
+	if(reportCsp !== undefined){
+		console.log("X-CSP-Rep on: "+reportCsp);
+		res.set('X-Content-Security-Policy-Report-Only', reportCsp);
+	}
+	next();
+}
+
 /*
  * Returns a session validation function that logs to the given stream.
  */
@@ -428,6 +449,7 @@ module.exports = function(myoptions) {
 			app.use(clientSession(csoptions));
 			//Add CSP
 			app.use(useCSP(cspopt,opt));
+			app.use(provideIECSPHeaders);
 			console.log(exclusionRegex);
 			//Add session validation
 			configureAuth(app,opt,exclusionRegex);
