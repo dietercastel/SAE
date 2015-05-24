@@ -29,40 +29,46 @@ function getDefaults(){
 		keyPath: undefined,
 		failedAuthFunction: undefined,
 		//OPTIONAL
+		// CSP OPTIONS:
 		//Which route to use for (various e.g. csp) reports.
 		//Report route will be excluded from auth by default.
 		reportRoute : '/reporting',
-		//CSP options:
+		//Use CSP in report-only mode.
 		cspReportOnly : false,
 		//Prefix to pass through proxy, important for reporting URL.
 		proxyPrefix : '', 
 		//Csp file to use. Can be generated with grunt-csp-express.
 		//Relative to projectPath
 		cspFile: '/csp.json',
+		//File where updated CSP will be stored.
 		newCspFile: '/newcsp.json',
 		//File to store csp reports in.
 		cspReportsLog : '/cspReports.log',
+		// OTHER LOGS
 		//File to store auth reports in.
 		authReportsLog : '/authReports.log',
 		//File to store xsrf reports in.
 		xsrfReportsLog : '/xsrfReports.log',
-		//Use the JSON prefix countermeasure described in angular docs.
-		JSONPrefixing: true,
 		//Exclude the '/' route from authentication.
 		excludeAuthRoot: true,
 		//List of Routes to exclude from authentication.
 		excludedAuthRoutes : [],
+		// SESSION OPTIONS
 		//Session (and anti-XSRF token) lifetime in seconds.
 		sessionIdleTimeout : 1200, //20 minutes
 		sessionRefreshTime : 600, //10 minutes
 		sessionAbsoluteExpiry : 21600, //6 hours
+		//Serve cookies only over https.
+		secureCookie : true,
+		//Path on which the session cookie is used.
+		cookiePath : '/',
+		//Full client session options for advanced usage.
+		clientSessionsOpt : undefined,
+		// ADDITIONAL options. 
 		//enables or disables frameguard.
 		disableFrameguard : false,
-		//Serve cookies only over https
-		//How does this interact with proxy/other settings?
-		secureCookie : true,
-		cookiePath : '/',
-		clientSessionsOpt : undefined
+		//Use the JSON prefix countermeasure described in angular docs.
+		disableJSONPrefixing: false
 	};
 }
 
@@ -134,8 +140,9 @@ function useCSP(cspopt,opt){
 	cspopt["report-only"] = opt["cspReportOnly"];
 	console.log("CSP: using following configuration:");
 	console.log(util.inspect(cspopt));
-	if(opt["cspReportOnly"]){
-		console.log("CSP: Report only mode on. This is NOT recommended.");
+	var env = app.get('env');
+	if(opt["cspReportOnly"] && (env !== 'testing' || env !== 'development')){
+		console.log("WARNINNG: CSP report-only mode on! This is NOT recommended in a production environment!");
 	}
 	return csp.getCSP(cspopt);
 }
@@ -269,7 +276,7 @@ function continueAuthedRoute(req, res, next){
 	var sendRef = res.send;
 	res.send = function(str){
 		var newStr = str;
-		if(res.sae.opt["JSONPrefixing"]){
+		if(!res.sae.opt["disableJSONPrefixing"]){
 			try {
 				JSON.parse(str);
 				newStr = ")]}',\n"+str;

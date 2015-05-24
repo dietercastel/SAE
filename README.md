@@ -100,6 +100,13 @@ Default value: `'/reporting'`
 Route that is used to acquire various reports most notably Content Security Policy Reports.
 This route is excluded from any form of build in authentication so there is no need to add this route to the `excludedAuthRoutes` option.
 
+### cspReportOnly (Boolean, Optional)
+Default value: `false`
+Use CSP report-only mode if this setting is `true`.
+This is beneficial while testing and works very well with the [updateCsp](#updateCSP) mechanism.
+If this is true when the environment is not 'testing' or 'development' it will generate a warning.
+So don't forget to set it back to `false` when launching your application publicly. 
+
 ### proxyPrefix (String, Optional)
 Default value: `''`
 Prefix used in combination with the `reportRoute` url. 
@@ -108,7 +115,7 @@ If you're not behind a proxy you will never need this.
 ### cspFile (String, Optional)
 Default value: `'/csp.json'`
 File path relative to your project to a file describing your content security policy.
-Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
+Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) and/or the [updateCsp](#updateCsp) feauture.
 
 This file can also be manually created using the following template in a file.
 Don't forget to remove the directives you don't need because a more specific directive will override a more general one.
@@ -140,9 +147,9 @@ File path relative to your project to the file where Content Security Policy rep
 Default value: `'/authReports.log'`
 File path relative to your project to the file where failed authentication reports should be stored.
 
-### JSONPrefixing (Boolean, Optional)
-Default value: `true`
-Determines whether to prefix JSON body data to prevent [this](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/) attack. The prefix is automatically stripped by AngularJS at the client side.
+### xsrfReportsLog (String, Optional)
+Default value: `'/xsrfReports.log'`
+File path relative to your project to the file where possible XSRF attacks should be logged.
 
 ### excludeAuthRoot (Boolean, Optional)
 Default value: `true`
@@ -167,11 +174,6 @@ Time in seconds a session will be extended with if the user remains active. Each
 ### sessionAbsoluteExpiry (Integer, Optional)
 Default value: `21600`
 Time in seconds after which a session will certainly expire. A session can no longer be refreshed if it has passed this time. By default this is 6 hours. It prevents a stolen or 'lost' session from being missused indefintelty. 
-
-### disableFrameguard (Boolean, Optional)
-Default value: `false`
-Removes frameguard protection. Only set this to true if you actually need frame/iframe inclusion.
-If you do, I highly recommend whitelisting the allowed domains in the Content Security Policy.
 
 ### secureCookie (Boolean, Optional)
 Default value: `true`
@@ -204,6 +206,14 @@ Default value:
 ```
 Object to be used as options for [node-client-sessions](https://github.com/mozilla/node-client-sessions).
 As `secret` option by default the key stored in `keyPath` is used. It's NOT recommended to set this object yourself unless you really know what you are doing with relation to secure session management.
+
+### disableJSONPrefixing (Boolean, Optional)
+Default value: `false`
+Determines whether to prefix JSON body data to prevent [this](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/) attack. The prefix is automatically stripped by AngularJS at the client side.
+### disableFrameguard (Boolean, Optional)
+Default value: `false`
+Removes frameguard protection. Only set this to true if you actually need frame/iframe inclusion.
+If you do, I highly recommend whitelisting the allowed domains in the Content Security Policy.
 
 ## Methods
 ### configure(app)
