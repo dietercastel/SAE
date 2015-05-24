@@ -135,12 +135,11 @@ function overrideDefaults(defaults, options){
 /*
  * Configure and return the content-security-policy middleware.
  */
-function useCSP(cspopt,opt){
+function useCSP(cspopt, opt, env){
 	cspopt["report-uri"] = opt["proxyPrefix"] + opt["reportRoute"];
 	cspopt["report-only"] = opt["cspReportOnly"];
 	console.log("CSP: using following configuration:");
 	console.log(util.inspect(cspopt));
-	var env = app.get('env');
 	if(opt["cspReportOnly"] && (env !== 'testing' || env !== 'development')){
 		console.log("WARNINNG: CSP report-only mode on! This is NOT recommended in a production environment!");
 	}
@@ -462,7 +461,7 @@ module.exports = function(myoptions) {
 			app.use(setXSRFToken);
 			app.use(clientSession(csoptions));
 			//Add CSP
-			app.use(useCSP(cspopt,opt));
+			app.use(useCSP(cspopt,opt, app.get('env')));
 			app.use(provideIECSPHeaders);
 			console.log(exclusionRegex);
 			//Add session validation
