@@ -20,6 +20,7 @@ var dontSniffMIME = require('dont-sniff-mimetype');
 var xsrfCookieName = "XSRF-TOKEN";
 var xsrfHeaderName = "X-XSRF-TOKEN";
 var requiredOptions = ["projectPath","keyPath","failedAuthFunction"];
+var cspDefaultDirectives = ["default-src", "script-src", "object-src", "style-src", "img-src", "media-src", "frame-src", "font-src", "connect-src" ];
 
 function getDefaults(){
 	return { 
@@ -416,8 +417,11 @@ module.exports = function(myoptions) {
 		cspopt = jf.readFileSync(cspFileName);
 	} catch (err) {
 		//on any error use starter options and report
-		console.log("CSP: no proper path provided, using starter options.");
-		cspopt = csp.STARTER_OPTIONS;
+		console.log("CSP: no proper path provided, using default options.");
+		cspopt = {};
+		cspDefaultDirectives.forEach(function(directivename){
+			cspopt[directivename] = csp.SRC_NONE;
+		});
 	}
 	newCSP = cspopt;
 	newCspFileName = path.join(opt["projectPath"],opt["newCspFile"]);
