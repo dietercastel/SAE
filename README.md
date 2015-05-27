@@ -154,8 +154,8 @@ File path relative to your project to the file where possible XSRF attacks shoul
 ### excludeAuthRoot (Boolean, Optional)
 Default value: `true`
 Determines whether to exclude the root path "/" from the session authentication mechanism.
-Only the "/" path is excluded when true. Not "/somethinghere" nor "/some/thing/here".
-We assume that "/" is used as public entry point for the web application so it's default value is true.
+Only the "/" path is excluded when true. NOT "/somethinghere" nor "/some/thing/here".
+We assume that "/" is used as public entry point for the web application so it's default value is `true`.
 Setting this to false would result in making your application inaccesible to anyone without a valid session.
 
 ### excludedAuthRoutes ([String], Optional)
