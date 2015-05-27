@@ -303,12 +303,12 @@ To use this feature the following steps should be undertaken. Pay close attentio
 
 1. Ensure that you are in a development or testing environment. It's not advised to use this while your website is live because this can lead to accidentally whitelisting an actual attack. 
 2. In a shell on your development/testing machine run `export NODE_ENV=development`/`export NODE_ENV=testing`. This is the standard way of letting your Node.js application know in what environment it is running.
-3. Start your application.
-4. Browse through your application, test some stuff, visit all pages that load new resources...
-5. Check the updated policy in `/newcsp.json` (or another name depending on your SAE options).
-6. If it seems correct and restricive enough use it as your new CSP (by replacing your actual policy with this file.).
-7. Go back to step 3. until the newly generated policy doesn't change any more.
-
+3. Set the `cspReportOnly` option to `true` (for faster results).
+4. Start your application.
+5. Browse through your application, test some stuff, visit all pages that load new resources...
+6. Check the updated policy in `/newcsp.json` (or another name depending on your SAE options).
+7. If it seems correct and restricive enough use it as your new CSP (by replacing your actual policy with this file.).
+8. *IMPORTANT*: Set the `cspReportOnly` to `false` and test with your newly enabled policy.
 
 ## Q&A
 
