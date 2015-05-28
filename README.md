@@ -174,7 +174,7 @@ Setting this to false would result in making your application inaccesible to any
 ### excludedAuthRoutes ([String], Optional)
 Default value: `[]`
 Other routes to exclude from the authentication mechanism. Login route, register route and any resources that should be accessible without authentication should be excluded.
-If you exclude for example "/login" all paths starting with "/login/" will ALSO be excluded from authentication. So "/login/admin","/login/some/thing/here" will also be excluded from the authentication middleware. 
+If you exclude for example `"/login"` all paths starting with `"/login/"` will ALSO be excluded from authentication. So `"/login/admin"`,`"/login/some/thing/here"` will also be excluded from the authentication middleware. 
 
 ### sessionIdleTimeout (Integer, Optional)
 Default value: `1200`
