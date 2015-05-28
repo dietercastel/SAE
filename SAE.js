@@ -46,9 +46,13 @@ function getDefaults(){
 		cspReportsLog : '/cspReports.log',
 		// OTHER LOGS
 		//File to store auth reports in.
-		authReportsLog : '/authReports.log',
+		csessionLog : '/csession.log',
+		//Log possibly sensitive data!!
+		logSessionData : function(csession){
+			return {};
+		},
 		//File to store xsrf reports in.
-		xsrfReportsLog : '/xsrfReports.log',
+		xsrfFailureLog : '/xsrfFailure.log',
 		//Exclude the '/' route from authentication.
 		excludeAuthRoot: true,
 		//List of Routes to exclude from authentication.
@@ -74,21 +78,29 @@ function getDefaults(){
 
 //BUNYAN LOGGIN SETUP
 //Serializers for different logs.
-var bunyanSerializers = {
+var bunyanReqSerializers = {
 	"cspReportsLog": function(req) {
 		return req.body["csp-report"];
 	},
-	"authReportsLog": function(req){
+	"csessionLog": function(req){
 		return {
-			"url" : req.url,
-			"csession" : req.csession,
-			"headers" : req.headers,
-			"cookies" : req.cookies
+			"protocol" : req.protocol,
+			"originalUrl" : req.originalUrl,
+			"method" : req.method,
+			"headers" : filterNames(req.headers,["cookie"]),
+			"cookies" : filterNames(req.cookies,["csession"]),
+			"ip" : req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+			"body" : req.body,
 		};
 	},
-	"xsrfReportsLog": function(req){
+	"xsrfFailureLog": function(req){
 		return {
-			"url" : req.url,
+			"protocol" : req.protocol,
+			"originalUrl" : req.originalUrl,
+			"method" : req.method,
+			"headers" : filterNames(req.headers,["cookie"]),
+			"cookies" : filterNames(req.cookies,["csession"]),
+			"ip" : req.headers['x-forwarded-for'] || req.connection.remoteAddress,
 			"body" : req.body,
 			"xsrf-token" : req.get(xsrfHeaderName),
 			"tokenCookie" : req.cookies[xsrfCookieName]
@@ -96,12 +108,41 @@ var bunyanSerializers = {
 	} 
 };
 
+/*
+ * Function that filters the keys in names out of object.
+ */
+function filterNames(object, names){
+	var result = {};
+	Object.keys(object).forEach(function(name){
+		if(names.indexOf(name) < 0){
+		//name does not occur in names
+			result[name] = object[name];
+		}
+	});
+	return result;
+}
+
+/*
+ * Returns a function that is used for logging csession.
+ *
+ * extractFunction : Function that returns additional
+ *	session data that needs to be logged.
+ */
+function logSessionDataFunc(extractFunction){
+	return function(csession){
+		return { logID: csession.sessionLogID,
+			expiresAbsolutelyAt : csession.expiresAbsolutelyAt,
+			data: extractFunction(csession) 
+		};
+	};
+}
+
 //Returns a new logger of the given type with the given settings
 function getBunyanLogger(logType, opt){
 	var logPath = path.join(opt["projectPath"],opt[logType]);
 	return bunyan.createLogger({
 		name: logType, 
-		serializers: { req : bunyanSerializers[logType] },
+		serializers: { req : bunyanReqSerializers[logType], csession: logSessionDataFunc(opt["logSessionData"])},
 		streams : [
 			{path: logPath}	
 		]
@@ -204,20 +245,17 @@ function setXSRFToken(req,res,next){
 /*
  * Configures the authentication with the given options.
  */
-function configureAuth(app, opt, exclusionRegex){
-		var authLogger = getBunyanLogger("authReportsLog",opt);
-		app.use(exclusionRegex, validateSession(authLogger));
+function configureAuth(app, authLogger, exclusionRegex){
 }
 
 /*
  *	Sends a new client-session with the given session and send data.
+ *	Also logs the "create" event.
  */
 function sendNewSession(req, res, sessionData, sendData){
 	if(req.method !== "POST"){
 		throw new Error("Starting a new session with sendNewSession should always be done with a POST request.");
 	}
-	console.log(req.method);
-	console.log("newSession");
 	//Clear csession explicitly
 	req.csession.reset();
 	//Set session data in req!!!
@@ -226,38 +264,48 @@ function sendNewSession(req, res, sessionData, sendData){
 		req.csession[name] = sessionData[name];
 	});
 	req.csession["expiresAbsolutelyAt"] = Date.now() + req.sae.opt["sessionAbsoluteExpiry"]*1000;
-	console.log("sending:\n" + util.inspect(req.csession));
+	req.csession["sessionLogID"] = Math.random();
 	//Reset XSRF token is done autmatically on each request.
 	//and send the data.
-	console.log("sendData:\n" + util.inspect(sendData));
+	var logObject = { //Filtered with serializers.
+		eventType : "create",
+		csession: req.csession,
+		req: req
+	};
+	res.sae.authLogger.info(logObject, "Created new csession.");
 	res.send(sendData);
 }
 
 /*
  * Sends the given data and removes the client-session cookie.
+ *	Also logs the "destroy" event.
  */
 function sendDestroySession(req, res, sendData){
 	if(req.method !== "POST"){
 		throw new Error("Destroying a session with sendDestroySession should always be done with a POST request.");
 	}
-	//Reset XSRF token is done autmatically on each request.
-	console.log(req.route.method);
-	console.log("csession before" + util.inspect(req.csession));
+	//XSRF token reset is done automatically on each request!
+	var logObject = { //Filtered with serializers.
+		eventType : "destroy",
+		csession: req.csession,
+		req: req
+	};
+	res.sae.authLogger.info(logObject, "Destroying session!");
 	req.csession.reset();
-	console.log("csession after" + util.inspect(req.csession));
 	res.send(sendData);
 }
 
 /*
  * Adds SAE functionality and options to each request/response.
  */
-function addSAE(opt){ 
+function addSAE(opt, authLogger){ 
 	return function (req, res, next){
 		res.sae = {};
 		req.sae = {};
 		req.sae.opt = res.sae.opt = opt;
 		res.sae.sendNewSession = sendNewSession;
 		res.sae.sendDestroySession = sendDestroySession;
+		res.sae.authLogger = authLogger;
 		next();
 	};
 }
@@ -330,12 +378,23 @@ function validateSession(authLogger){
 		if(req.csession !== undefined && Date.now() <= req.csession["expiresAbsolutelyAt"]){
 			console.log("Authenticated request.");
 			//Succesful auth let request go trough.
+			var logObject = { //Filtered with serializers.
+				eventType : "update",
+				csession: req.csession,
+				req: req
+			};
+			authLogger.info(logObject, "Authentication successful!");
 			continueAuthedRoute(req,res,next);
 			return;
 		}
 		//Handle bad request.
 		console.log("Auth Failed");
-		authLogger.info({req: req}, "Authentication failed");
+		var logObject = { //Filtered with serializers.
+			eventType : "failure",
+			csession: req.csession,
+			req: req
+		};
+		authLogger.info(logObject, "Authentication failed!");
 		req.sae.opt.failedAuthFunction(req, res);
 		return;	
 	};
@@ -445,30 +504,32 @@ module.exports = function(myoptions) {
 		}
 	};
 	var xsrf = csurf(csurfOptions);
+	var authLogger = getBunyanLogger("csessionLog",opt);
 	return {
 		configure: function(app){
 			//Add third party middleware first
 			app.disable('x-powered-by');
 			app.use(dontSniffMIME());
 			configureFrameguard(app, cspopt, opt);
-			//Cookieparser before xsrf
+				//Cookieparser before xsrf
 			app.use(cookieParser());
 			//report before XSRF check!!
 			configureCspReport(app,opt,cspopt);
 			app.use(xsrf);
 			//Add sae functions and options to requests.
-			app.use(addSAE(opt));
+			app.use(addSAE(opt, authLogger));
 			app.use(setXSRFToken);
+			//Provide client session options
 			app.use(clientSession(csoptions));
 			//Add CSP
 			app.use(useCSP(cspopt,opt, app.get('env')));
 			app.use(provideIECSPHeaders);
 			console.log(exclusionRegex);
-			//Add session validation
-			configureAuth(app,opt,exclusionRegex);
+			//Add session validation, check csession is populated
+			app.use(exclusionRegex, validateSession(authLogger));
 		},
 		handleErrors: function(app){
-			var xsrfLogger = getBunyanLogger("xsrfReportsLog", opt);
+			var xsrfLogger = getBunyanLogger("xsrfFailureLog", opt);
 			xsrfLogger.level("error");
 			app.use(handleWrongXSRFToken(xsrfLogger));
 		},

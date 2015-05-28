@@ -73,6 +73,10 @@ At your logout **POST** route:
 - Disabeled x-powered-by header.
 - Uses [dont-sniff-mimetype](https://github.com/helmetjs/dont-sniff-mimetype) by default.
 - Denies frame/iframe inclusion by default (click-jacking proctection) with [frameguard](https://github.com/helmetjs/frameguard)
+- Extensive logging in JSON with [Bunyan](https://github.com/trentm/node-bunyan) of
+ - All session operations: (authentication) failure, update, create, destroy.
+ - Potential XSRF attacks
+ - Incoming CSP reports.
 
 ## Options
 
@@ -143,12 +147,21 @@ Do *NOT* use a newCspFile file that has been generated in a *PRODUCTION* environ
 Default value: `'/cspReports.log'`
 File path relative to your project to the file where Content Security Policy reports should be stored.
 
-### authReportsLog (String, Optional)
-Default value: `'/authReports.log'`
-File path relative to your project to the file where failed authentication reports should be stored.
+### csessionLog (String, Optional)
+Default value: `'/csession.log'`
+File path relative to your project to the file where all session events should be stored.
 
-### xsrfReportsLog (String, Optional)
-Default value: `'/xsrfReports.log'`
+###	logSessionData (Function, Optional)
+Default value:
+```JavaScript
+function(csession){
+	return {};
+}
+```
+Function that returns an object containing sessiondata that will be logged at every session event. Beware that the session data could contain sensitive information. This is why I explicitly give you the option to select what session information you NEED to log. Other request parameters like url, headers, etc. are already being logged. The csession cookie is not logged because it is equivalent to logging the session ID which is also a bad idea (see [this OWASP page](https://www.owasp.org/index.php/Session_Management_Cheat_Sheet#Logging_Sessions_Life_Cycle:_Monitoring_Creation.2C_Usage.2C_and_Destruction_of_Session_IDs)). 
+
+### xsrfFailureLog (String, Optional)
+Default value: `'/xsrfFailure.log'`
 File path relative to your project to the file where possible XSRF attacks should be logged.
 
 ### excludeAuthRoot (Boolean, Optional)
