@@ -254,6 +254,7 @@ req.csession["mycounter"] = 1;
 //... (sets the encrypted cookie and) sends the response. 
 res.send();
 ```
+*IMPORTANT NOTE*: Don't use `req.csession["expiresAbsolutelyAt"]`, nor `req.cession["csessionLogID"]`. Both are used internally in SAE. Changing these will lead to unexpected behaviour!
 
 ### res.sae.sendNewSession(req, res, sessionData, sendData)
 Creates a new client-session with the given sessionData and sends the given sendData. This function should be used when a user succesfully authenticates for the first time. The encrypted cookie used to do this serves as authentication cookie for subsequent requests. This call ends the processing of a request like res.send(sendData) would do. Because this function changes state it should only be used in a POST method route. An error will be thrown otherwise.
