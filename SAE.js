@@ -130,7 +130,7 @@ function filterNames(object, names){
  */
 function logSessionDataFunc(extractFunction){
 	return function(csession){
-		return { logID: csession.sessionLogID,
+		return { logID: csession.csessionLogID,
 			expiresAbsolutelyAt : csession.expiresAbsolutelyAt,
 			data: extractFunction(csession) 
 		};
@@ -264,7 +264,7 @@ function sendNewSession(req, res, sessionData, sendData){
 		req.csession[name] = sessionData[name];
 	});
 	req.csession["expiresAbsolutelyAt"] = Date.now() + req.sae.opt["sessionAbsoluteExpiry"]*1000;
-	req.csession["sessionLogID"] = Math.random();
+	req.csession["csessionLogID"] = Math.random();
 	//Reset XSRF token is done autmatically on each request.
 	//and send the data.
 	var logObject = { //Filtered with serializers.
