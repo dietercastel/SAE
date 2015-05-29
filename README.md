@@ -4,7 +4,7 @@ SAE is a [Node.js](https://nodejs.org) module to ease the development of a *secu
 
 ## Quick start
 At the very least you need to do three things:
-### 1. Configure the module
+### 1. Configure and include the SAE module
 In your main file:
 ```JavaScript
 var express = require('express');
@@ -50,7 +50,7 @@ At your login **POST** route:
 	}
 	//...
 ```
-*Note*: If you don't use "/" as login route you should add that route to `excludedAuthRoutes`. Otherwise users won't be able to login unless they already have a session.
+*Note*: If you don't use "/" as login route you should add the route you do use to `excludeSessionAuthRoutes`. Otherwise users won't be able to login unless they already have a valid session...
 
 ### 3. Destroy the session at your logout route.
 At your logout **POST** route: 
@@ -64,7 +64,7 @@ At your logout **POST** route:
 ```
 
 ## Features
-- Centralised session authentication on ALL routes except "/" plus those specified in the `excludedAuthRoutes` option. Usage similar too regular sessions via `req.csession`.
+- Centralised session authentication on ALL routes except "/" plus those specified in the `excludeSessionAuthRoutes` option. Usage similar too regular sessions via `req.csession`.
 - Using Mozilla's [node-client-sessions](https://github.com/mozilla/node-client-sessions) to enable REST services. 
 - [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with AngularJS (Works without ANY configuration). Protection does not cover 'GET', 'HEAD', 'OPTIONS' HTTP requests for a good reason, see [Q&A](#qa).
 - Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
@@ -102,7 +102,7 @@ function(req,res){
 ### reportRoute (String, Optional)
 Default value: `'/reporting'`
 Route that is used to acquire various reports most notably Content Security Policy Reports.
-This route is excluded from any form of build in authentication so there is no need to add this route to the `excludedAuthRoutes` option.
+This route is excluded from any form of build in authentication so there is no need to add this route to the `excludeSessionAuthRoutes` option.
 
 ### cspReportOnly (Boolean, Optional)
 Default value: `false`
@@ -164,14 +164,14 @@ Function that returns an object containing sessiondata that will be logged at ev
 Default value: `'/xsrfFailure.log'`
 File path relative to your project to the file where possible XSRF attacks should be logged.
 
-### excludeAuthRoot (Boolean, Optional)
+### excludeSessionAuthRoot (Boolean, Optional)
 Default value: `true`
 Determines whether to exclude the root path "/" from the session authentication mechanism.
 Only the "/" path is excluded when true for obvious reasons. NOT "/somethinghere" nor "/some/thing/here".
 We assume that "/" is often used as public entry point for the web application that's why the default value is `true`.
-Setting this to false would result in making your application inaccesible to anyone without a valid session unless you excluded other routes with the `excludedAuthRoutes` option described next.
+Setting this to false would result in making your application inaccesible to anyone without a valid session unless you excluded other routes with the `excludeSessionAuthRoutes` option described next.
 
-### excludedAuthRoutes ([String], Optional)
+### excludeSessionAuthRoutes ([String], Optional)
 Default value: `[]`
 Other routes to exclude from the session authentication mechanism. Login route, register route and any resources that should be accessible without a valid session should be excluded.
 If you exclude for example `"/login"` all paths starting with `"/login/"` will ALSO be excluded from authentication. E.g. `"/login/admin"` and  `"/login/some/thing/here"` will be accessible without a valid session. 
@@ -238,6 +238,25 @@ app : the express applictation to configure.
 Handles the error's thrown by SAE. A good idea to place this as first error that will be handled.
 #### Arguments:
 - app : the express applictation to configure.
+
+### defaults()
+Function that returns the default configuration object.
+
+### options()
+Function that returns the current configuration object.
+
+### sessionAuthRoutes()
+Returns a regex that can be used as route in express. It includes all the routes that are not explicitly excluded by either `excludeSessionAuthRoot` or `excludeSessionAuthRoutes`.
+E.g.
+```JavaScript
+var express = require('express');
+var app = express();
+//...saeoptions...
+var sae = require('sec-angular-express')(saeoptions);
+app(sae.sessionAuthRoutes(), function(res, req, next){
+	console.log("This route is only accesible with a valid (client)session.");
+});
+```
 
 ## Request and Response ojbect additions
 
@@ -345,6 +364,4 @@ Because neither of these should be able to execute a sensitive operation, they a
 The updated CSP file could allow malicious resources by accident. It makes use of incoming csp-reports. These are generated by the browser to indicate when your Content-Security-Policy gets violated. While creating your application these reports will most likely be harmless (e.g. forgot to add a new resource to your existing CSP). In a live production environment these could totally undermine CSP protection. That's also the reason I chose not to automatically update the used CSP. You should ALWAYS verify the newly generated CSP before using it to see it doesn't contain anything you don't want.
 
 ### Why can't i use inline scripts and CSS when using CSP?
-Because there is no way the browser can tell inline scripts appart from malicious injections.
-CSP supports hash/nonce values to actually allow them and still be able to check them.
-But for new applications this is not advised that's why I choose not to support it in SAE. Inline scripting/styling is also a code smell and should be avoided!
+Because there is no way the browser can tell inline scripts appart from malicious injections. CSP supports hash/nonce values to actually allow them and still be able to check them. But for new applications this is not advised that's why I choose not to support it in SAE. Inline scripting/styling is also a code smell and should be avoided!

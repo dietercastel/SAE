@@ -54,14 +54,14 @@ function getDefaults(){
 		//File to store xsrf reports in.
 		xsrfFailureLog : '/xsrfFailure.log',
 		//Exclude the '/' route from authentication.
-		excludeAuthRoot: true,
+		excludeSessionAuthRoot : true,
 		//List of Routes to exclude from authentication.
-		excludedAuthRoutes : [],
+		excludeSessionAuthRoutes : [],
 		// SESSION OPTIONS
-		//Session (and anti-XSRF token) lifetime in seconds.
+		//Session lifetime in seconds.
 		sessionIdleTimeout : 1200, //20 minutes
 		sessionRefreshTime : 600, //10 minutes
-		sessionAbsoluteExpiry : 21600, //6 hours
+		sessionAbsoluteExpiry : 21600, //6 hours, also XSRF cookie token lifetime
 		//Serve cookies only over https.
 		secureCookie : true,
 		//Path on which the session cookie is used.
@@ -206,7 +206,7 @@ function configureCspReport(app, opt, cspopt){
 		cspReportLogger.info({req: req, env: app.get('env')}, "Received CSP report.");
 		next();
 	});
-	console.log(app.get('env'));
+	console.log("Environment=" + app.get('env'));
 	
 	var cspup = updateCSP({
 		"env" : app.get('env'),
@@ -227,7 +227,6 @@ function configureCspReport(app, opt, cspopt){
  * Adds an anti-XSRF double submit cookie to the given response.
  */
 function setXSRFToken(req,res,next){
-	console.log("SETTING anti XSRF TOKEN");
 	//Set the cookie so angular.js can read the token.
 	var headerValue = xsrfCookieName +'='+req.csrfToken()+'; Path=/';
 	if(res.sae.opt["secureCookie"]){
@@ -336,7 +335,7 @@ function overloadSend(req, res, next){
 			}
 		}
 		// Sometimes exectued twice for one request
-		// Stacktrace leads to callback with nano...
+		// Stacktrace leads to callback with nano (couchdb middleware)...
 		//
 		// var e = new Error('dummy');
 		// var stack = e.stack.replace(/^[^\(]+?[\n$]/gm, '')
@@ -389,13 +388,8 @@ function validateSession(csessionLogger){
 	 *	Execute failedAuthFunction(req, res)
 	 */
 	return function(req, res, next){
-		console.log("XSRF Token OK");
-		console.log("#########This url is: " + req.url);
-		console.log("#########This path is: " + req.path);
-		console.log("csession:\n"+util.inspect(req.csession));
 		//Unwrap csession and check absolute expiry field
 		if(req.csession !== undefined && Date.now() <= req.csession["expiresAbsolutelyAt"]){
-			console.log("Authenticated request.");
 			//Succesful auth let request go trough.
 			var logObject = { //Filtered with serializers.
 				eventType : "update",
@@ -407,7 +401,6 @@ function validateSession(csessionLogger){
 			return;
 		}
 		//Handle bad request.
-		console.log("Auth Failed");
 		var logObject = { //Filtered with serializers.
 			eventType : "failure",
 			csession: req.csession,
@@ -437,8 +430,6 @@ function handleWrongXSRFToken(xsrfLogger){
 		}
 		//Log potential xsrf attack
 		xsrfLogger.error({req: req}, "Potential XSRF attack!!");
-		console.log("WRONG CSRFTOKEN");
-		console.log(util.inspect(err));
 		//Reset XSRF token is done autmatically on each request.
 		res.status(403);
 		res.send('Possible CSRF attack detected.');
@@ -491,8 +482,9 @@ module.exports = function(myoptions) {
 		};
 	}
 	//Add reportRoute to exclusion of routes.
-	opt["excludedAuthRoutes"].push(opt["reportRoute"]);
-	var exclusionRegex = er.getExclusionRegex(opt["excludeAuthRoot"],opt["excludedAuthRoutes"]);
+	opt["excludeSessionAuthRoutes"].push(opt["reportRoute"]);
+	console.log("Excluding routes: " + opt["excludeSessionAuthRoutes"]);
+	var exclusionRegex = er.getExclusionRegex(opt["excludeSessionAuthRoot"],opt["excludeSessionAuthRoutes"]);
 	// Read csp config file.
 	var cspopt;
 	var cspFileName = path.join(opt["projectPath"],opt["cspFile"]);
@@ -520,7 +512,6 @@ module.exports = function(myoptions) {
 			httpOnly: true
 		},
 		value : function (req){
-			console.log("token =="+req.get(xsrfHeaderName));
 			return req.get(xsrfHeaderName);
 		}
 	};
@@ -545,7 +536,6 @@ module.exports = function(myoptions) {
 			//Add CSP
 			app.use(useCSP(cspopt,opt, app.get('env')));
 			app.use(provideIECSPHeaders);
-			console.log(exclusionRegex);
 			//Add session validation, check csession is populated
 			app.use(exclusionRegex, validateSession(csessionLogger));
 		},
@@ -556,6 +546,6 @@ module.exports = function(myoptions) {
 		},
 		defaults: def,
 		options: opt,
-		authRoutes: exclusionRegex,
+		sessionAuthRoutes: exclusionRegex,
 	};
 };
