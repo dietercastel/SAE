@@ -245,7 +245,10 @@ Handles the error's thrown by SAE. A good idea to place this as first error that
 This is the options object used by SAE internally. It's however not recommended to change options here. To set the options use the object passed to the constructor of the SAE middleware.
 
 ### req.csession
-Object property of a request used to retrieve and store client-session data. The contents of this object is stored in an encrypted cookie with [client-sessions](https://www.npmjs.com/package/client-sessions). The decryption and encryption is done automatically on each authenticated request and response respectively. Just setting a value of csession and sending the response is sufficient. Session creation (sendNewSession) and destruction (sendDestroySession) should be done with the methods below. Beware that all session data is transmitted on every request. This means that there should not be large amounts of data stored in the session. Use your database storage and place only a reference to it in the csession instead. 
+Object property of a request used to retrieve and store client-session data. The contents of this object is stored in an encrypted cookie with [client-sessions](https://www.npmjs.com/package/client-sessions). The decryption and encryption is done automatically on each authenticated request and response respectively. Just setting a value of csession and sending the response is sufficient. Session creation (sendNewSession) and destruction (sendDestroySession) should be done with the methods below.
+
+####Size limitation
+Beware that all session data is transmitted on every request. This means that there should not be large amounts of data stored in the session. Use your database storage and place only a reference to it in the csession instead. Most browsers also don't allow cookies to be larger than 4kb. A warning will logged if the csession cookie is getting excessivly large.
 
 Usage:
 ```JavaScript

@@ -71,7 +71,7 @@ function getDefaults(){
 		// ADDITIONAL options. 
 		//enables or disables frameguard.
 		disableFrameguard : false,
-		//Use the JSON prefix countermeasure described in angular docs.
+		//Use the JSON prefix countermeasure descrhttps://github.com/expressjs/csurfibed in angular docs.
 		disableJSONPrefixing: false
 	};
 }
@@ -245,7 +245,7 @@ function setXSRFToken(req,res,next){
 /*
  * Configures the authentication with the given options.
  */
-function configureAuth(app, authLogger, exclusionRegex){
+function configureAuth(app, csessionLogger, exclusionRegex){
 }
 
 /*
@@ -272,7 +272,7 @@ function sendNewSession(req, res, sessionData, sendData){
 		csession: req.csession,
 		req: req
 	};
-	res.sae.authLogger.info(logObject, "Created new csession.");
+	res.sae.csessionLogger.info(logObject, "Created new csession.");
 	res.send(sendData);
 }
 
@@ -290,7 +290,7 @@ function sendDestroySession(req, res, sendData){
 		csession: req.csession,
 		req: req
 	};
-	res.sae.authLogger.info(logObject, "Destroying session!");
+	res.sae.csessionLogger.info(logObject, "Destroying session!");
 	req.csession.reset();
 	res.send(sendData);
 }
@@ -298,15 +298,19 @@ function sendDestroySession(req, res, sendData){
 /*
  * Adds SAE functionality and options to each request/response.
  */
-function addSAE(opt, authLogger){ 
+function addSAE(opt, csessionLogger){ 
 	return function (req, res, next){
 		res.sae = {};
 		req.sae = {};
 		req.sae.opt = res.sae.opt = opt;
+		//Add logger
+		req.sae.csessionLogger = csessionLogger;
+		res.sae.csessionLogger = csessionLogger;
+		//Add new send methods.
 		res.sae.sendNewSession = sendNewSession;
 		res.sae.sendDestroySession = sendDestroySession;
-		res.sae.authLogger = authLogger;
-		next();
+		//Overload original send method. 
+		overloadSend(req,res,next);
 	};
 }
 
@@ -319,7 +323,7 @@ function addSAE(opt, authLogger){
  *
  * After send is overwritten continue with next()
  */
-function continueAuthedRoute(req, res, next){
+function overloadSend(req, res, next){
 	var sendRef = res.send;
 	res.send = function(str){
 		var newStr = str;
@@ -331,13 +335,28 @@ function continueAuthedRoute(req, res, next){
 				//nop
 			}
 		}
-		//TODO: check 
-		console.log("######CSP:\n" + res.get('Content-Security-Policy'));
+		// Sometimes exectued twice for one request
+		// Stacktrace leads to callback with nano...
+		//
+		// var e = new Error('dummy');
+		// var stack = e.stack.replace(/^[^\(]+?[\n$]/gm, '')
+		// 	.replace(/^\s+at\s+/gm, '')
+		// 	.replace(/^Object.<anonymous>\s*\(/gm, '{anonymous}()@')
+		// 	.split('\n');
+		// console.log(stack);
+		// console.log(sendRef.toString());
+		
+		var cookieSize = req.cookies.csession.length;
+		if(cookieSize > 2600){
+			var logObject = { //Filtered with serializers.
+				eventType : "sizewarning",
+				csessionsize : cookieSize,
+				csession: req.csession,
+				req: req
+			};
+			res.sae.csessionLogger.warn(logObject, "Cookies are close to exceeding common size limit!");
+		}
 		//Execute original send();
-		// Test this
-		// if(res.get('Set-Cookie').length > 4000){
-		// 	console.log("WARNING: cookie is close to exceeding common size limit");
-		// }
 		sendRef.call(this,newStr);
 	};
 	next();
@@ -362,7 +381,7 @@ function provideIECSPHeaders(req, res, next){
 /*
  * Returns a session validation function that logs to the given stream.
  */
-function validateSession(authLogger){
+function validateSession(csessionLogger){
 	/*
 	 * If session is valid
 	 *	Executes next()
@@ -383,8 +402,8 @@ function validateSession(authLogger){
 				csession: req.csession,
 				req: req
 			};
-			authLogger.info(logObject, "Authentication successful!");
-			continueAuthedRoute(req,res,next);
+			csessionLogger.info(logObject, "Authentication successful!");
+			next();
 			return;
 		}
 		//Handle bad request.
@@ -394,7 +413,7 @@ function validateSession(authLogger){
 			csession: req.csession,
 			req: req
 		};
-		authLogger.info(logObject, "Authentication failed!");
+		csessionLogger.info(logObject, "Authentication failed!");
 		req.sae.opt.failedAuthFunction(req, res);
 		return;	
 	};
@@ -504,7 +523,7 @@ module.exports = function(myoptions) {
 		}
 	};
 	var xsrf = csurf(csurfOptions);
-	var authLogger = getBunyanLogger("csessionLog",opt);
+	var csessionLogger = getBunyanLogger("csessionLog",opt);
 	return {
 		configure: function(app){
 			//Add third party middleware first
@@ -517,7 +536,7 @@ module.exports = function(myoptions) {
 			configureCspReport(app,opt,cspopt);
 			app.use(xsrf);
 			//Add sae functions and options to requests.
-			app.use(addSAE(opt, authLogger));
+			app.use(addSAE(opt, csessionLogger));
 			app.use(setXSRFToken);
 			//Provide client session options
 			app.use(clientSession(csoptions));
@@ -526,7 +545,7 @@ module.exports = function(myoptions) {
 			app.use(provideIECSPHeaders);
 			console.log(exclusionRegex);
 			//Add session validation, check csession is populated
-			app.use(exclusionRegex, validateSession(authLogger));
+			app.use(exclusionRegex, validateSession(csessionLogger));
 		},
 		handleErrors: function(app){
 			var xsrfLogger = getBunyanLogger("xsrfFailureLog", opt);
