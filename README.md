@@ -64,7 +64,7 @@ At your logout **POST** route:
 ```
 
 ## Features
-- Centralised session authentication on ALL routes except "/" plus those specified in the `excludedAuthRoutes` option.
+- Centralised session authentication on ALL routes except "/" plus those specified in the `excludedAuthRoutes` option. Usage similar too regular sessions via `req.csession`.
 - Using Mozilla's [node-client-sessions](https://github.com/mozilla/node-client-sessions) to enable REST services. 
 - [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with AngularJS (works without ANY configuration). 
 - Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
@@ -74,9 +74,9 @@ At your logout **POST** route:
 - Uses [dont-sniff-mimetype](https://github.com/helmetjs/dont-sniff-mimetype) by default.
 - Denies frame/iframe inclusion by default (click-jacking proctection) with [frameguard](https://github.com/helmetjs/frameguard)
 - Extensive logging in JSON with [Bunyan](https://github.com/trentm/node-bunyan) of
- - All session operations: (authentication) failure, update, create, destroy.
- - Potential XSRF attacks
- - Incoming CSP reports.
+ * All session operations: (authentication) failure, update, create, destroy.
+ * Potential XSRF attacks
+ * Incoming CSP reports.
 
 ## Options
 
