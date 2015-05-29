@@ -66,7 +66,7 @@ At your logout **POST** route:
 ## Features
 - Centralised session authentication on ALL routes except "/" plus those specified in the `excludedAuthRoutes` option. Usage similar too regular sessions via `req.csession`.
 - Using Mozilla's [node-client-sessions](https://github.com/mozilla/node-client-sessions) to enable REST services. 
-- [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with AngularJS (Works without ANY configuration). Protection does not cover 'GET', 'HEAD', 'OPTIONS' HTTP requests for a good reason, see [Q&A](#Q&A).
+- [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with AngularJS (Works without ANY configuration). Protection does not cover 'GET', 'HEAD', 'OPTIONS' HTTP requests for a good reason, see [Q&A](#qa).
 - Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
 - [Content Security Policy](https://en.wikipedia.org/wiki/Content_Security_Policy) support to be configured manually in a file or to be used in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
 - Incremental CSP updater for non-inline resources based on csp-reports for Firefox and Chrome. Can and should only be used in a testing or development environment. See [updateCSP](#updateCSP).
