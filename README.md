@@ -74,9 +74,9 @@ At your logout **POST** route:
 - Uses [dont-sniff-mimetype](https://github.com/helmetjs/dont-sniff-mimetype) by default.
 - Denies frame/iframe inclusion by default (click-jacking proctection) with [frameguard](https://github.com/helmetjs/frameguard)
 - Extensive logging in JSON with [Bunyan](https://github.com/trentm/node-bunyan) of
- * All session operations: (authentication) failure, update, create, destroy.
- * Potential XSRF attacks
- * Incoming CSP reports.
+	* All session operations: (authentication) failure, update, create, destroy. Plus size limit warning.
+	* Potential XSRF attacks
+	* Incoming CSP reports.
 
 ## Options
 
@@ -167,14 +167,14 @@ File path relative to your project to the file where possible XSRF attacks shoul
 ### excludeAuthRoot (Boolean, Optional)
 Default value: `true`
 Determines whether to exclude the root path "/" from the session authentication mechanism.
-Only the "/" path is excluded when true. NOT "/somethinghere" nor "/some/thing/here".
-We assume that "/" is used as public entry point for the web application so it's default value is `true`.
-Setting this to false would result in making your application inaccesible to anyone without a valid session.
+Only the "/" path is excluded when true for obvious reasons. NOT "/somethinghere" nor "/some/thing/here".
+We assume that "/" is often used as public entry point for the web application that's why the default value is `true`.
+Setting this to false would result in making your application inaccesible to anyone without a valid session unless you excluded other routes with the `excludedAuthRoutes` option described next.
 
 ### excludedAuthRoutes ([String], Optional)
 Default value: `[]`
-Other routes to exclude from the authentication mechanism. Login route, register route and any resources that should be accessible without authentication should be excluded.
-If you exclude for example `"/login"` all paths starting with `"/login/"` will ALSO be excluded from authentication. So `"/login/admin"`,`"/login/some/thing/here"` will also be excluded from the authentication middleware. 
+Other routes to exclude from the session authentication mechanism. Login route, register route and any resources that should be accessible without a valid session should be excluded.
+If you exclude for example `"/login"` all paths starting with `"/login/"` will ALSO be excluded from authentication. E.g. `"/login/admin"` and  `"/login/some/thing/here"` will be accessible without a valid session. 
 
 ### sessionIdleTimeout (Integer, Optional)
 Default value: `1200`
@@ -186,7 +186,7 @@ Time in seconds a session will be extended with if the user remains active. Each
 
 ### sessionAbsoluteExpiry (Integer, Optional)
 Default value: `21600`
-Time in seconds after which a session will certainly expire. A session can no longer be refreshed if it has passed this time. By default this is 6 hours. It prevents a stolen or 'lost' session from being missused indefintelty. 
+Time in seconds after which a session will certainly expire. A session can no longer be refreshed if it has passed this time. By default this is 6 hours. This prevents a stolen or 'lost' session from being missused indefintelty. 
 
 ### secureCookie (Boolean, Optional)
 Default value: `true`
@@ -278,14 +278,14 @@ Clears the client-side session and sends the given sendData. The encrypted cooki
 
 ## grunt-csp-express
 To get started with using CSP I recommend [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) which I developped to work well in combination with this library.
-To get up and running easily follow the following steps.
+To get up and running easily follow the Quick Start guide below.
 
 ### Quick Start
 
 1. Run `npm install -g grunt-cli` (Installs grunt cli tools globally).
 2. In your project directory run `npm install grunt --save-dev` (Installs the grunt task runner locally and saves it as a development dependency).
 3. In your project directory run `npm install grunt-csp-express --save-dev` (Installs the grunt-csp-express tool locally and again saves it as a development dependency).
-4. In your project directory create a file called `Gruntfile.js` and paste the code below in it.
+4. In your project directory create a file called `Gruntfile.js` and paste the basic Gruntfil.js below in it.
 5. In your project directory run `grunt makecsp`. This will scan your directory for rules to use as csp and place a file called `csp.json` in your project directory that can instantly be used as CSP with Sec-Angular-Express.
 
 Basic Gruntfile.js:

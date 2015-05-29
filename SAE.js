@@ -512,8 +512,10 @@ module.exports = function(myoptions) {
 	jf.writeFileSync(newCspFileName, newCSP);
 
 	var csurfOptions = {
+		//Cookie contains secret that will only
+		// be used serverside for token validation.
 		cookie : {
-			maxAge : opt["sessionIdleTimeout"]*1000,
+			maxAge : opt["sessionAbsoluteExpiry"]*1000,
 			secure : opt["secureCookie"],
 			httpOnly: true
 		},
