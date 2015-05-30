@@ -64,15 +64,15 @@ At your logout **POST** route:
 ```
 
 ## Features
-- Centralised session authentication on ALL routes except "/" plus those specified in the `excludeSessionAuthRoutes` option. Usage similar too regular sessions via `req.csession`.
-- Using Mozilla's [node-client-sessions](https://github.com/mozilla/node-client-sessions) to enable REST services. 
+- Centralised secure session authentication on ALL routes except "/" and those specified in the `excludeSessionAuthRoutes` option. All defaults are secure and good to go.
+- Client-sessions provided by Mozilla's [node-client-sessions](https://github.com/mozilla/node-client-sessions) to enable REST services. Usage similar too regular sessions via `req.csession`.
 - [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with AngularJS (Works without ANY configuration). Protection does not cover 'GET', 'HEAD', 'OPTIONS' HTTP requests for a good reason, see [Q&A](#qa).
-- Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
 - [Content Security Policy](https://en.wikipedia.org/wiki/Content_Security_Policy) support to be configured manually in a file or to be used in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
 - Incremental CSP updater for non-inline resources based on csp-reports for Firefox and Chrome. Can and should only be used in a testing or development environment. See [updateCSP](#updateCSP).
-- Disabeled x-powered-by header.
+- Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
+- Disabled x-powered-by header.
 - Uses [dont-sniff-mimetype](https://github.com/helmetjs/dont-sniff-mimetype) by default.
-- Denies frame/iframe inclusion by default (click-jacking proctection) with [frameguard](https://github.com/helmetjs/frameguard)
+- Denies frame/iframe inclusion by default (click-jacking protection) with [frameguard](https://github.com/helmetjs/frameguard).
 - Extensive logging in JSON with [Bunyan](https://github.com/trentm/node-bunyan) of
 	* All session operations: (authentication) failure, update, create, destroy. Plus size limit warning.
 	* Potential XSRF attacks
@@ -81,18 +81,18 @@ At your logout **POST** route:
 ## Options
 
 ### projectPath (String, REQUIRED)
-The path to your project floder. `__dirname` in your main file can often be used for this setting.
+The path to your project folder. `__dirname` in your main file can often be used for this setting.
 
 ### keyPath (String, REQUIRED)
 The absolute path to a file containing the server-side key for encrypting the client-side sessions.
 Example: `/path/to/keyfile.key` pointing to a file containing only `mynb1supersecretkey4me`.
-Do not put this file under version control! This feauture is espicially intended to avoid placing private data into open by accident for example on a public github repository. Be wary of your keys/secrets/private info!
+Do not put this file under version control! This feature is especially intended to avoid placing private data into open by accident for example on a public github repository. Be wary of your keys/secrets/private info!
 
 ####Key format restriction
-The key in the file is check against 2 very simple rules to make sure it's sufficiently secure (for now). The key must be at least 16 characters long and needs to include at least two words (letter sequences seperated by a non-letter sequence).  Optimally, you use a long true random generated string that will most likely fit these requirements.
+The key in the file is check against 2 very simple rules to make sure it's sufficiently secure (for now). The key must be at least 16 characters long and needs to include at least two words (letter sequences separated by a non-letter sequence).  Optimally, you use a long true random generated string that will most likely fit these requirements.
 
 ### failedAuthFunction (function, REQUIRED)
-A function that gets executed when a request is not proberly authenticated. 
+A function that gets executed when a request is not properly authenticated. 
 Example
 ```JavaScript
 function(req,res){
@@ -116,13 +116,13 @@ So don't forget to set it back to `false` when launching your application public
 
 ### proxyPrefix (String, Optional)
 Default value: `''`
-Prefix used in combination with the `reportRoute` url. 
+Prefix used in combination with the `reportRoute` URL. 
 If you're not behind a proxy you will never need this.
 
 ### cspFile (String, Optional)
 Default value: `'/csp.json'`
 File path relative to your project to a file describing your content security policy.
-Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) and/or the [updateCsp](#updateCsp) feauture.
+Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) and/or the [updateCsp](#updateCsp) feature.
 
 This file can also be manually created using the following template in a file.
 Don't forget to remove the directives you don't need because a more specific directive will override a more general one.
@@ -161,7 +161,7 @@ function(csession){
 	return {};
 }
 ```
-Function that returns an object containing sessiondata that will be logged at every session event. Beware that the session data could contain sensitive information. This is why I explicitly give you the option to select what session information you NEED to log. Other request parameters like url, headers, etc. are already being logged. The csession cookie is not logged because it is equivalent to logging the session ID which is also a bad idea (see [this OWASP page](https://www.owasp.org/index.php/Session_Management_Cheat_Sheet#Logging_Sessions_Life_Cycle:_Monitoring_Creation.2C_Usage.2C_and_Destruction_of_Session_IDs)). 
+Function that returns an object containing session data that will be logged at every session event. Beware that the session data could contain sensitive information. This is why I explicitly give you the option to select what session information you NEED to log. Other request parameters like URL, headers, etc. are already being logged. The csession cookie is not logged because it is equivalent to logging the session ID which is also a bad idea (see [this OWASP page](https://www.owasp.org/index.php/Session_Management_Cheat_Sheet#Logging_Sessions_Life_Cycle:_Monitoring_Creation.2C_Usage.2C_and_Destruction_of_Session_IDs)). 
 
 ### xsrfFailureLog (String, Optional)
 Default value: `'/xsrfFailure.log'`
@@ -172,7 +172,7 @@ Default value: `true`
 Determines whether to exclude the root path "/" from the session authentication mechanism.
 Only the "/" path is excluded when true for obvious reasons. NOT "/somethinghere" nor "/some/thing/here".
 We assume that "/" is often used as public entry point for the web application that's why the default value is `true`.
-Setting this to false would result in making your application inaccesible to anyone without a valid session unless you excluded other routes with the `excludeSessionAuthRoutes` option described next.
+Setting this to false would result in making your application inaccessible to anyone without a valid session unless you excluded other routes with the `excludeSessionAuthRoutes` option described next.
 
 ### excludeSessionAuthRoutes ([String], Optional)
 Default value: `[]`
@@ -189,19 +189,19 @@ Time in seconds a session will be extended with if the user remains active. Each
 
 ### sessionAbsoluteExpiry (Integer, Optional)
 Default value: `21600`
-Time in seconds after which a session will certainly expire. A session can no longer be refreshed if it has passed this time. By default this is 6 hours. This prevents a stolen or 'lost' session from being missused indefintelty. 
+Time in seconds after which a session will certainly expire. A session can no longer be refreshed if it has passed this time. By default this is 6 hours. This prevents a stolen or 'lost' session from being misused indefinitely. 
 
 ### secureCookie (Boolean, Optional)
 Default value: `true`
 Forces to only allow the session cookies to be used over a https connection.
-You really should be using HTTPs even just with some free certificate like [StartSSL Free](https://www.startssl.com/?app=1) or [Let's Encrypt](https://letsencrypt.org/) when it goes live.
-If you don't use HTTPS remember that everything will be send in cleartext: passwords, sensitive information, ...!!
+You really should be using HTTPS even just with some free certificate like [StartSSL Free](https://www.startssl.com/?app=1) or [Let's Encrypt](https://letsencrypt.org/) when it goes live.
+If you don't use HTTPS remember that everything will be send in plaintext: passwords, sensitive information, ...!!
 
 ### cookiePath (Boolean, Optional)
 Default value: `'/'`
 The path on which the client-session cookie will be used.
 Making this path as restrictive as possible is good practice.
-This means that if you only serve authenticated users from a '/secretive' path you should set this setting to only be included when the url contains that path.
+This means that if you only serve authenticated users from a '/secretive' path you should set this setting to only be included when the URL contains that path.
 
 ### clientSessionOpt (Object, Optional)
 Default value: 
@@ -233,14 +233,14 @@ If you do, I highly recommend whitelisting the allowed domains in the Content Se
 
 ## Methods
 ### configure(app)
-Configures SAE. Strongly advised to use this method before other uses of app.use(), routers or any other middleware.
+Configures SAE. Strongly advised to use this method before other uses of `app.use()`, routers or any other middleware.
 #### Arguments
-app : the express applictation to configure.
+- `app` : the express application to configure.
 
 ### handleErrors(app)
 Handles the error's thrown by SAE. A good idea to place this as first error that will be handled.
 #### Arguments:
-- app : the express applictation to configure.
+- `app` : the express application to configure.
 
 ### defaults()
 Function that returns the default configuration object.
@@ -270,7 +270,7 @@ This is the options object used by SAE internally. It's however not recommended 
 Object property of a request used to retrieve and store client-session data. The contents of this object is stored in an encrypted cookie with [client-sessions](https://www.npmjs.com/package/client-sessions). The decryption and encryption is done automatically on each authenticated request and response respectively. Just setting a value of csession and sending the response is sufficient. Session creation (sendNewSession) and destruction (sendDestroySession) should be done with the methods below.
 
 ####Size limitation
-Beware that all session data is transmitted on every request. This means that there should not be large amounts of data stored in the session. Use your database storage and place only a reference to it in the csession instead. Most browsers also don't allow cookies to be larger than 4kb. A warning will logged if the csession cookie is getting excessivly large.
+Beware that all session data is transmitted on every request. This means that there should not be large amounts of data stored in the session. Use your database storage and place only a reference to it in the csession instead. Most browsers also don't allow cookies to be larger than 4kb. A warning will logged if the csession cookie is getting excessively large.
 
 Usage:
 ```JavaScript
@@ -282,24 +282,24 @@ res.send();
 *IMPORTANT NOTE*: Don't use `req.csession["expiresAbsolutelyAt"]`, nor `req.cession["csessionLogID"]`. Both are used internally in SAE. Changing these will lead to unexpected behaviour!
 
 ### res.sae.sendNewSession(req, res, sessionData, sendData)
-Creates a new client-session with the given sessionData and sends the given sendData. This function should be used when a user succesfully authenticates for the first time. The encrypted cookie used to do this serves as authentication cookie for subsequent requests. This call ends the processing of a request like res.send(sendData) would do. Because this function changes state it should only be used in a POST method route. An error will be thrown otherwise.
+Creates a new client-session with the given sessionData and sends the given sendData. This function should be used when a user successfully authenticates for the first time. The encrypted cookie used to do this serves as authentication cookie for subsequent requests. This call ends the processing of a request like res.send(sendData) would do. Because this function changes state it should only be used in a POST method route. An error will be thrown otherwise.
 #### Arguments:
-- req : The express request object.
-- res : The express response object.
-- sessionData : Object containing the data that should be stored in the client-side session.
-- sendData : The data that will be send in the response. Identical to the argument in res.send(sendData).
+- `req` : The express request object.
+- `res` : The express response object.
+- `sessionData` : Object containing the data that should be stored in the client-side session.
+- `sendData` : The data that will be send in the response. Identical to the argument in res.send(sendData).
 
 ### res.sae.sendDestroySession(req,res,sendData);
 Clears the client-side session and sends the given sendData. The encrypted cookie will not contain any more data and will not be able to authenticate a request. This call ends the processing of a request like res.send(sendData) would do. Because this function changes state it should only be used in a POST method route. An error will be thrown otherwise.
 
 #### Arguments:
-- req : The express request object.
-- res : The express response object.
-- sendData : The data that will be send in the response. Identical to the argument in res.send(sendData).
+- `req` : The express request object.
+- `res` : The express response object.
+- `sendData` : The data that will be send in the response. Identical to the argument in res.send(sendData).
 
 
 ## grunt-csp-express
-To get started with using CSP I recommend [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) which I developped to work well in combination with this library.
+To get started with using CSP I recommend [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) which I developed to work well in combination with this library.
 To get up and running easily follow the Quick Start guide below.
 
 ### Quick Start
@@ -307,8 +307,8 @@ To get up and running easily follow the Quick Start guide below.
 1. Run `npm install -g grunt-cli` (Installs grunt cli tools globally).
 2. In your project directory run `npm install grunt --save-dev` (Installs the grunt task runner locally and saves it as a development dependency).
 3. In your project directory run `npm install grunt-csp-express --save-dev` (Installs the grunt-csp-express tool locally and again saves it as a development dependency).
-4. In your project directory create a file called `Gruntfile.js` and paste the basic Gruntfil.js below in it.
-5. In your project directory run `grunt makecsp`. This will scan your directory for rules to use as csp and place a file called `csp.json` in your project directory that can instantly be used as CSP with Sec-Angular-Express.
+4. In your project directory create a file called `Gruntfile.js` and paste the basic Gruntfile.js below in it.
+5. In your project directory run `grunt makecsp`. This will scan your directory for rules to use as CSP and place a file called `csp.json` in your project directory that can instantly be used as CSP with Sec-Angular-Express.
 
 Basic Gruntfile.js:
 ```JavaScript
@@ -348,13 +348,13 @@ This is the standard way of letting your Node.js application know in what enviro
 4. Start your application.
 5. Browse through your application, test some stuff, visit all pages that load new resources...
 6. Check the updated policy in `/newcsp.json` (or another name depending on your SAE options).
-7. If it seems correct and restricive enough use it as your new CSP (by replacing your actual policy with this file.).
+7. If it seems correct and restrictive enough use it as your new CSP (by replacing your actual policy with this file.).
 8. *IMPORTANT*: Set the `cspReportOnly` to `false` and test with your newly enabled policy.
 
 ## Q&A
 
 ### Will the library work if I don't use AngularJS?
-Some parts will some parts won't. Therefore it's highly recommended to use AngularJS. AngularJS is the first line prevention against XSS and provides some other great security features for which this library is preconfigured.
+Some parts will (csession auth, CSP) some parts won't (XSRF protection). Therefore it's highly recommended to use AngularJS. AngularJS is the first line prevention against [XSS](https://en.wikipedia.org/wiki/Cross-site_scripting) and provides some security features for which this library is preconfigured.
 
 ### Why do I need to put my secret in a file?
 Because secrets should not reside in (probably) public code. It's therefore advised that you put your secret in a separate file on your server _outside_ your project directory. History has shown that they end up publicly [all to often](https://rosspenman.com/api-key-exposure/).
@@ -365,8 +365,8 @@ See [this explanation](https://docs.angularjs.org/guide/security#mixing-client-s
 ### Why aren't 'GET', 'HEAD', 'OPTIONS' requests checked against XSRF?
 Because neither of these should be able to execute a sensitive operation, they are considered [safe methods](http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.1.1). If they do in your application you should redesign it to fit the proper HTTP specifications.
 
-### Why shouldn't i use the updateCSP mechanism in a production environment?
+### Why shouldn't I use the updateCSP mechanism in a production environment?
 The updated CSP file could allow malicious resources by accident. It makes use of incoming csp-reports. These are generated by the browser to indicate when your Content-Security-Policy gets violated. While creating your application these reports will most likely be harmless (e.g. forgot to add a new resource to your existing CSP). In a live production environment these could totally undermine CSP protection. That's also the reason I chose not to automatically update the used CSP. You should ALWAYS verify the newly generated CSP before using it to see it doesn't contain anything you don't want.
 
-### Why can't i use inline scripts and CSS when using CSP?
-Because there is no way the browser can tell inline scripts appart from malicious injections. CSP supports hash/nonce values to actually allow them and still be able to check them. But for new applications this is not advised that's why I choose not to support it in SAE. Inline scripting/styling is also a code smell and should be avoided!
+### Why can't I use inline scripts and CSS when using CSP?
+Because there is no way the browser can tell inline scripts apart from malicious injections. CSP supports hash/nonce values to actually allow them and still be able to check them. But for new applications this is not advised that's why I choose not to support it in SAE. Inline scripting/styling is also a code smell and should be avoided!
