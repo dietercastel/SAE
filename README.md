@@ -78,7 +78,7 @@ At your logout **POST** route:
 	* Potential XSRF attacks
 	* Incoming CSP reports.
 
-## Options
+## Library Options
 
 ### projectPath (String, REQUIRED)
 The path to your project folder. `__dirname` in your main file can often be used for this setting.
@@ -206,15 +206,15 @@ This means that if you only serve authenticated users from a '/secretive' path y
 ### clientSessionOpt (Object, Optional)
 Default value: 
 ```JavaScript
-{ 
+{ // opt.name indicates the library option with that name
 	cookieName : 'csession',
-	secret : 'key stored in opt["keyPath"]'
-	duration: opt["sessionIdleTimeout"]*1000, 
-	activeDuration: opt["sessionIdleTimeout"]*500, 
+	secret : 'key stored in opt.keyPath'
+	duration: opt.sessionIdleTimeout*1000, 
+	activeDuration: opt.sessionIdleTimeout*500, 
 	cookie: 
 		{
-			path:opt["cookiePath"],  
-			secure: opt["secureCookie"],
+			path:opt.cookiePath,  
+			secure: opt.secureCookie,
 			httpOnly: true,
 			ephemeral: true 
 		}
@@ -231,7 +231,7 @@ Default value: `false`
 Removes frameguard protection. Only set this to true if you actually need frame/iframe inclusion.
 If you do, I highly recommend whitelisting the allowed domains in the Content Security Policy.
 
-## Methods
+## SAE object Methods
 ### configure(app)
 Configures SAE. Strongly advised to use this method before other uses of `app.use()`, routers or any other middleware.
 #### Arguments
@@ -242,26 +242,27 @@ Handles the error's thrown by SAE. A good idea to place this as first error that
 #### Arguments:
 - `app` : the express application to configure.
 
-### defaults()
-Function that returns the default configuration object.
+## SAE object Properties
+### defaults
+Property that contains the default configuration object.
 
-### options()
-Function that returns the current configuration object.
+### options
+Property that contains the current configuration object.
 
-### sessionAuthRoutes()
-Returns a regex that can be used as route in express. It includes all the routes that are not explicitly excluded by either `excludeSessionAuthRoot` or `excludeSessionAuthRoutes`.
+### sessionAuthRoutesRegex
+Property that contains a regex that can be used as route in express. It includes all the routes that are not explicitly excluded by either `excludeSessionAuthRoot` or `excludeSessionAuthRoutes`.
 E.g.
 ```JavaScript
 var express = require('express');
 var app = express();
 //...saeoptions...
 var sae = require('sec-angular-express')(saeoptions);
-app(sae.sessionAuthRoutes(), function(res, req, next){
+app(sae.sessionAuthRoutesRegex, function(res, req, next){
 	console.log("Only accesible with a valid (client)session!");
 });
 ```
 
-## Request and Response ojbect additions
+## Request and Response object additions
 
 ### req.sae.opt = res.sae.opt
 This is the options object used by SAE internally. It's however not recommended to change options here. To set the options use the object passed to the constructor of the SAE middleware.
@@ -297,6 +298,8 @@ Clears the client-side session and sends the given sendData. The encrypted cooki
 - `res` : The express response object.
 - `sendData` : The data that will be send in the response. Identical to the argument in res.send(sendData).
 
+### req.sae.sessionAuthRoutesRegex = res.sae.sessionAuthRoutesRegex
+Property that contains the same regex as [sessionAuthRoutesRegex](#sessionAuthRoutesRegex).
 
 ## grunt-csp-express
 To get started with using CSP I recommend [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) which I developed to work well in combination with this library.
@@ -316,8 +319,8 @@ module.exports = function(grunt) {
   // Project configuration. 
   grunt.initConfig({
     makecsp: {
-      default_options: { //target with default_options uses '.' as directory 
- 
+      default_options: { 
+		//target with default_options uses '.' as directory 
       }
     }
   });

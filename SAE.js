@@ -258,8 +258,18 @@ function configureAuth(app, csessionLogger, exclusionRegex){
  *	Also logs the "create" event.
  */
 function sendNewSession(req, res, sessionData, sendData){
+	//Starting session changes state so should be POST method req
 	if(req.method !== "POST"){
-		throw new Error("Starting a new session with sendNewSession should always be done with a POST request.");
+		throw new Error("Starting a new session with sendNewSession" +
+				"should always be done with a POST request.");
+	}
+	//if the originalUrl matches the regex it will be authed via csession
+	if(req.sae.exclusionRegex.test(req.originalUrl)){
+		throw new Error("You can't start a session in a route that is " + 
+				"not excluded from session authentication!\n Add route '" + 
+				req.originalUrl +
+				"' to excludeSessionAuthRoutes and check whether sae.configure(app) " + 
+				"is called before other middleware!");
 	}
 	//Clear csession explicitly
 	req.csession.reset();
@@ -286,6 +296,7 @@ function sendNewSession(req, res, sessionData, sendData){
  *	Also logs the "destroy" event.
  */
 function sendDestroySession(req, res, sendData){
+	//Starting session changes state so should be POST method req
 	if(req.method !== "POST"){
 		throw new Error("Destroying a session with sendDestroySession should always be done with a POST request.");
 	}
@@ -303,11 +314,14 @@ function sendDestroySession(req, res, sendData){
 /*
  * Adds SAE functionality and options to each request/response.
  */
-function addSAE(opt, csessionLogger){ 
+function addSAE(opt, csessionLogger, exclusionRegex){ 
 	return function (req, res, next){
 		res.sae = {};
 		req.sae = {};
 		req.sae.opt = res.sae.opt = opt;
+		//Add exclusionRegex
+		req.sae.sessionAuthRoutesRegex = exclusionRegex;
+		res.sae.sessionAuthRoutesRegex = exclusionRegex;
 		//Add logger
 		req.sae.csessionLogger = csessionLogger;
 		res.sae.csessionLogger = csessionLogger;
@@ -537,7 +551,7 @@ module.exports = function(myoptions) {
 			configureCspReport(app,opt,cspopt);
 			app.use(xsrf);
 			//Add sae functions and options to requests.
-			app.use(addSAE(opt, csessionLogger));
+			app.use(addSAE(opt, csessionLogger, exclusionRegex));
 			app.use(setXSRFToken);
 			//Add CSP
 			app.use(useCSP(cspopt,opt, app.get('env')));
@@ -554,6 +568,6 @@ module.exports = function(myoptions) {
 		},
 		defaults: def,
 		options: opt,
-		sessionAuthRoutes: exclusionRegex,
+		sessionAuthRoutesRegex: exclusionRegex,
 	};
 };
