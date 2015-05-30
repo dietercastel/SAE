@@ -66,12 +66,18 @@ function getDefaults(){
 		secureCookie : true,
 		//Path on which the session cookie is used.
 		cookiePath : '/',
-		//Full client session options for advanced usage.
-		clientSessionsOpt : undefined,
-		// ADDITIONAL options. 
-		//enables or disables frameguard.
+		// FEATURE DISABLING OPTIONS. 
+		//disables csession authentication if true
+		disableCsession : false, //TODO: finish impl
+		//disables updateCSP mechanism 
+		disableUpdateCSP : false, //TODO: impl
+		//disables XSRF protection mechanism 
+		disableXSRFProtection : false, //TODO: impl
+		//disables csession size warning if true
+		disableCsessionSizeWarning : false,
+		//disables frameguard if true
 		disableFrameguard : false,
-		//Use the JSON prefix countermeasure descrhttps://github.com/expressjs/csurfibed in angular docs.
+		//Use the JSON prefix countermeasure described in angular docs.
 		disableJSONPrefixing: false
 	};
 }
@@ -325,8 +331,9 @@ function addSAE(opt, csessionLogger){
 function overloadSend(req, res, next){
 	var sendRef = res.send;
 	res.send = function(str){
+		var opt = res.sae.opt;
 		var newStr = str;
-		if(!res.sae.opt["disableJSONPrefixing"]){
+		if(!opt.disableJSONPrefixing){
 			try {
 				JSON.parse(str);
 				newStr = ")]}',\n"+str;
@@ -345,15 +352,20 @@ function overloadSend(req, res, next){
 		// console.log(stack);
 		// console.log(sendRef.toString());
 		
-		var cookieSize = req.cookies.csession.length;
-		if(cookieSize > 2600){
-			var logObject = { //Filtered with serializers.
-				eventType : "sizewarning",
-				csessionsize : cookieSize,
-				csession: req.csession,
-				req: req
-			};
-			res.sae.csessionLogger.warn(logObject, "Cookies are close to exceeding common size limit!");
+		if(!opt["disableCsession"] && !opt["disableCsessionSizeWarning"]){
+			if(req.cookies.csession !== undefined){
+				var cookieSize = req.cookies.csession.length;
+				if(cookieSize > 2600){
+					var logObject = { //Filtered with serializers.
+						eventType : "sizewarning",
+						csessionsize : cookieSize,
+						csession: req.csession,
+						req: req
+					};
+					res.sae.csessionLogger.warn(logObject, 
+							"Cookies are close to exceeding common size limit!");
+				}
+			}
 		}
 		//Execute original send();
 		sendRef.call(this,newStr);
@@ -464,26 +476,22 @@ module.exports = function(myoptions) {
 	var secretKeyFile = fs.readFileSync(opt["keyPath"], {encoding:'utf8'});
 	var secretKey = secretKeyFile.toString().split("\n")[0];
 	checkSecretKey(secretKey);
-	var csoptions;
-	if(opt["clientSessionsOpt"] !== undefined){
-		csoptions = opt["clientSessionsOpt"];
-	} else {
-		csoptions = {
-			cookieName : 'csession',
-			secret : secretKey,
-			duration: opt["sessionIdleTimeout"]*1000, //duration is in ms
-			activeDuration: opt["sessionRefreshTime"]*1000, 
-			cookie: {
-				path: opt["cookiePath"],  
-				secure: opt["secureCookie"],
-				httpOnly: true,
-				ephemeral: true //make it a session cookie
-			}
-		};
-	}
+	var csoptions = {
+		cookieName : 'csession',
+		secret : secretKey,
+		duration: opt["sessionIdleTimeout"]*1000, //duration is in ms
+		activeDuration: opt["sessionRefreshTime"]*1000, 
+		cookie: {
+			path: opt["cookiePath"],  
+			secure: opt["secureCookie"],
+			httpOnly: true,
+			ephemeral: true //make it a session cookie
+		}
+	};
 	//Add reportRoute to exclusion of routes.
 	opt["excludeSessionAuthRoutes"].push(opt["reportRoute"]);
-	console.log("Excluding routes: " + opt["excludeSessionAuthRoutes"]);
+	console.log("Excluding '/' (root) from session auth: " + opt["excludeSessionAuthRoot"]);
+	console.log("Excluding session routes: " + opt["excludeSessionAuthRoutes"]);
 	var exclusionRegex = er.getExclusionRegex(opt["excludeSessionAuthRoot"],opt["excludeSessionAuthRoutes"]);
 	// Read csp config file.
 	var cspopt;
@@ -523,7 +531,7 @@ module.exports = function(myoptions) {
 			app.disable('x-powered-by');
 			app.use(dontSniffMIME());
 			configureFrameguard(app, cspopt, opt);
-				//Cookieparser before xsrf
+			//Cookieparser before xsrf
 			app.use(cookieParser());
 			//report before XSRF check!!
 			configureCspReport(app,opt,cspopt);
@@ -531,11 +539,11 @@ module.exports = function(myoptions) {
 			//Add sae functions and options to requests.
 			app.use(addSAE(opt, csessionLogger));
 			app.use(setXSRFToken);
-			//Provide client session options
-			app.use(clientSession(csoptions));
 			//Add CSP
 			app.use(useCSP(cspopt,opt, app.get('env')));
 			app.use(provideIECSPHeaders);
+			//Provide client session options
+			app.use(clientSession(csoptions));
 			//Add session validation, check csession is populated
 			app.use(exclusionRegex, validateSession(csessionLogger));
 		},
