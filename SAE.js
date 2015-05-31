@@ -60,7 +60,7 @@ function getDefaults(){
 		// SESSION OPTIONS
 		//Session lifetime in seconds.
 		sessionIdleTimeout : 1200, //20 minutes
-		sessionRefreshTime : 600, //10 minutes
+		sessionRefreshTime : 300, //5 minutes
 		sessionAbsoluteExpiry : 21600, //6 hours, also XSRF cookie token lifetime
 		//Serve cookies only over https.
 		secureCookie : true,
@@ -484,6 +484,30 @@ function checkSecretKey(secretKey){
 	}
 }
 
+/* 
+ * Function that rethrows node-client-session error properly.
+ *
+ * note:
+ *	err from node-client-sessions is string instead of object 
+ *	the call
+ *		process.nextTick(function() {
+ *			next(new Error("client-sessions error: " + x.toString()));
+ *		});
+ *	instead of throwing error might be the cause. 
+ */
+function handleCsessionError(err, res, req, next){
+	var message = "";
+	if(typeof err === "string"){
+		message = err;
+	}
+	if(message.indexOf('client-sessions error') >= 0){
+		console.error(message);
+		throw new Error(message);
+	} else {
+		next(err);
+	}
+}
+
 module.exports = function(myoptions) {
 	var def= getDefaults();
 	var opt= overrideDefaults(def, myoptions); 
@@ -502,6 +526,24 @@ module.exports = function(myoptions) {
 			ephemeral: true //make it a session cookie
 		}
 	};
+	/* node-client-sessions defaults:
+	 * cookieName : 'session_state' (optional) - changed
+	 * secret : undefined (required) - Improved: external file, strength check.
+	 * duration : 24h*1000 - changed  ++
+	 * activeDuration: 5min *60 *1000 - same
+	 * cookie: {
+	 *	path: "/" - same 
+	 *	secure: false - changed to true, throws error when no secure socket detected.
+	 *  ephemeral: false- changed to true
+	 *  maxAge : replaced by absolute session timeout 
+	 * }
+	 *
+	 *
+	 *
+	 */
+
+
+
 	//Add reportRoute to exclusion of routes.
 	opt["excludeSessionAuthRoutes"].push(opt["reportRoute"]);
 	console.log("Excluding '/' (root) from session auth: " + opt["excludeSessionAuthRoot"]);
@@ -564,6 +606,7 @@ module.exports = function(myoptions) {
 		handleErrors: function(app){
 			var xsrfLogger = getBunyanLogger("xsrfFailureLog", opt);
 			xsrfLogger.level("error");
+			app.use(handleCsessionError);
 			app.use(handleWrongXSRFToken(xsrfLogger));
 		},
 		defaults: def,

@@ -184,8 +184,8 @@ Default value: `1200`
 Time in seconds a session should last. It's advised to set this session as short as possible. The default value makes the session last for 20 minutes as suggested by [OWASP](https://www.owasp.org/index.php/Session_Management#How_to_protect_yourself_4). The session will also end on closing of the browser.
 
 ### sessionRefreshTime (Integer, Optional)
-Default value: `600`
-Time in seconds a session will be extended with if the user remains active. Each request can extend the session lifetime if it's nearing it's end. Unless the session has passed it's absolute expiry time.
+Default value: `300`
+Time in seconds the session lifetime will be extended with if there is HTTP activity. Each request can extend the session lifetime if it's nearing it's end if the session hasn't passed it's absolute expiry time.
 
 ### sessionAbsoluteExpiry (Integer, Optional)
 Default value: `21600`
