@@ -527,7 +527,7 @@ module.exports = function(myoptions) {
 		}
 	};
 	/* node-client-sessions defaults:
-	 * cookieName : 'session_state' (optional) - changed
+	 * cookieName : 'session_state' (optional) - changed 
 	 * secret : undefined (required) - Improved: external file, strength check.
 	 * duration : 24h*1000 - changed  ++
 	 * activeDuration: 5min *60 *1000 - same
@@ -537,7 +537,6 @@ module.exports = function(myoptions) {
 	 *  ephemeral: false- changed to true
 	 *  maxAge : replaced by absolute session timeout 
 	 * }
-	 *
 	 */
 
 	//Add reportRoute to exclusion of routes.
