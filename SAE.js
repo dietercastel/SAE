@@ -490,9 +490,9 @@ function checkSecretKey(secretKey){
  * note:
  *	err from node-client-sessions is string instead of object 
  *	the call
- *		process.nextTick(function() {
+ *		'process.nextTick(function() {
  *			next(new Error("client-sessions error: " + x.toString()));
- *		});
+ *		});' (see github of node-client-sessions)
  *	instead of throwing error might be the cause. 
  */
 function handleCsessionError(err, res, req, next){
@@ -538,11 +538,7 @@ module.exports = function(myoptions) {
 	 *  maxAge : replaced by absolute session timeout 
 	 * }
 	 *
-	 *
-	 *
 	 */
-
-
 
 	//Add reportRoute to exclusion of routes.
 	opt["excludeSessionAuthRoutes"].push(opt["reportRoute"]);
