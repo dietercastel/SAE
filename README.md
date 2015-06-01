@@ -66,17 +66,17 @@ At your logout **POST** route:
 ## Features
 - Centralised secure session authentication on ALL routes except "/" and those specified in the `excludeSessionAuthRoutes` option. All defaults are secure and good to go.
 - Client-sessions provided by Mozilla's [node-client-sessions](https://github.com/mozilla/node-client-sessions) to enable REST services. Usage similar too regular sessions via `req.csession`.
-- [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with AngularJS (Works without ANY configuration). Protection does not cover 'GET', 'HEAD', 'OPTIONS' HTTP requests for a good reason, see [Q&A](qa).
 - [Content Security Policy](https://en.wikipedia.org/wiki/Content_Security_Policy) support to be configured manually in a file or to be used in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express).
-- Incremental CSP updater for non-inline resources based on csp-reports for Firefox and Chrome. Can and should only be used in a testing or development environment. See [updateCSP](updateCSP).
+- Incremental CSP updater for non-inline resources based on csp-reports for Firefox and Chrome. Can and should only be used in a testing or development environment. See [updateCSP](#updateCSP).
+- [Cross-site Request forgery](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection to use in combination with AngularJS (Works without ANY configuration). Protection does not cover 'GET', 'HEAD', 'OPTIONS' HTTP requests for a good reason, see [Q&A](#qa)!
+- Extensive logging in JSON with [Bunyan](https://github.com/trentm/node-bunyan) of:
+	* All session operations: (authentication) failure, update, create, destroy. Plus size limit warning.
+	* Potential XSRF attacks
+	* Incoming Content Security Policy reports.
 - Protection against a subtle JSON vulnerability (described [here](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/))
 - Disabled x-powered-by header.
 - Uses [dont-sniff-mimetype](https://github.com/helmetjs/dont-sniff-mimetype) by default.
 - Denies frame/iframe inclusion by default (click-jacking protection) with [frameguard](https://github.com/helmetjs/frameguard).
-- Extensive logging in JSON with [Bunyan](https://github.com/trentm/node-bunyan) of
-	* All session operations: (authentication) failure, update, create, destroy. Plus size limit warning.
-	* Potential XSRF attacks
-	* Incoming CSP reports.
 
 ## Library Options
 
@@ -110,7 +110,7 @@ This route is excluded from any form of build in authentication so there is no n
 ### cspReportOnly (Boolean, Optional)
 Default value: `false`
 Use CSP report-only mode if this setting is `true`.
-This is beneficial while testing and works very well with the [updateCsp](updateCSP) mechanism.
+This is beneficial while testing and works very well with the [updateCsp](#updateCSP) mechanism.
 If this is true when the environment is not 'testing' or 'development' it will generate a warning.
 So don't forget to set it back to `false` when launching your application publicly. 
 
@@ -122,7 +122,7 @@ If you're not behind a proxy you will never need this.
 ### cspFile (String, Optional)
 Default value: `'/csp.json'`
 File path relative to your project to a file describing your content security policy.
-Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) and/or the [updateCsp](updateCsp) feature.
+Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) and/or the [updateCsp](#updateCsp) feature.
 
 This file can also be manually created using the following template in a file.
 Don't forget to remove the directives you don't need because a more specific directive will override a more general one.
@@ -142,7 +142,7 @@ Don't forget to remove the directives you don't need because a more specific dir
 ```
 ### newCspFile (String, Optional)
 Default value: `'/newcsp.json'`
-File path relative to your project to a file that will be created when using the [updateCsp](updateCSP) feature.
+File path relative to your project to a file that will be created when using the [updateCsp](#updateCSP) feature.
 Before using this file as your CSP verify that it is as restrictive as possible.
 Do *NOT* use a newCspFile file that has been generated in a *PRODUCTION* environment as it may lead to whitelisting an actual attack!
 
@@ -299,7 +299,7 @@ Clears the client-side session and sends the given sendData. The encrypted cooki
 - `sendData` : The data that will be send in the response. Identical to the argument in res.send(sendData).
 
 ### req.sae.sessionAuthRoutesRegex = res.sae.sessionAuthRoutesRegex
-Property that contains the same regex as [sessionAuthRoutesRegex](sessionAuthRoutesRegex).
+Property that contains the same regex as [sessionAuthRoutesRegex](#sessionAuthRoutesRegex).
 
 ## Grunt-csp-express
 To get started with using CSP I recommend [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) which I developed to work well in combination with this library.
