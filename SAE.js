@@ -248,12 +248,6 @@ function setXSRFToken(req,res,next){
 //SESSION RELATED FUNCTIONS
 
 /*
- * Configures the authentication with the given options.
- */
-function configureAuth(app, csessionLogger, exclusionRegex){
-}
-
-/*
  *	Sends a new client-session with the given session and send data.
  *	Also logs the "create" event.
  */
@@ -264,7 +258,7 @@ function sendNewSession(req, res, sessionData, sendData){
 				"should always be done with a POST request.");
 	}
 	//if the originalUrl matches the regex it will be authed via csession
-	if(req.sae.exclusionRegex.test(req.originalUrl)){
+	if(req.sae.sessionAuthRoutesRegex.test(req.originalUrl)){
 		throw new Error("You can't start a session in a route that is " + 
 				"not excluded from session authentication!\n Add route '" + 
 				req.originalUrl +
@@ -559,6 +553,7 @@ module.exports = function(myoptions) {
 		});
 	}
 	newCSP = cspopt;
+	//TODO: check whether newCspFile is different from cspFile.
 	newCspFileName = path.join(opt["projectPath"],opt["newCspFile"]);
 	jf.writeFileSync(newCspFileName, newCSP);
 
