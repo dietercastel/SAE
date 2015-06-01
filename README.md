@@ -142,9 +142,18 @@ Don't forget to remove the directives you don't need because a more specific dir
 ```
 ### newCspFile (String, Optional)
 Default value: `'/newcsp.json'`
-File path relative to your project to a file that will be created when using the [updateCsp](#updateCSP) feature.
+File path relative to your project to a file that will be created when using the [updateCSP](#updateCSP) feature.
 Before using this file as your CSP verify that it is as restrictive as possible.
 Do *NOT* use a newCspFile file that has been generated in a *PRODUCTION* environment as it may lead to whitelisting an actual attack!
+
+### useLocalhostAsSelf (Boolean, Optional)
+Default value: `true`
+Determines whether the [updateCSP](#updateCSP) mechanism will interpret `localhost` and `127.0.0.1` as `'self'`for creating the newCspFile. If you're running only your webapplication on your localhost while developing this setting is probably fine. If you use an actual named domain or various interacting services on localhost check out the `useNameAsSelf` setting.
+
+### useNameAsSelf (String, Optional)
+Default value: `undefined`
+If the string in this setting is found as an origin to add to the newCspFile `'self'` will be used instead.
+This is useful if you can't use `useLocalhostAsSelf`(because you are using vhosts for example) and still want the generic `'self'` in your CSP.
 
 ### cspReportsLog (String, Optional)
 Default value: `'/cspReports.log'`
@@ -353,6 +362,10 @@ This is the standard way of letting your Node.js application know in what enviro
 6. Check the updated policy in `/newcsp.json` (or another name depending on your SAE options).
 7. If it seems correct and restrictive enough use it as your new CSP (by replacing your actual policy with this file.).
 8. *IMPORTANT*: Set the `cspReportOnly` to `false` and test with your newly enabled policy.
+
+Furthermore you can configure this feature with two settings:
+`useLocalhostAsSelf` (default `true`) will replace `localhost` and `127.0.0.1` with `'self'` in the new CSP.
+If `useNameAsSelf` is set it will replace origins that contain `useNameAsSelf` with `'self'` in the new CSP.
 
 ## Viewing logs with Bunyan
 

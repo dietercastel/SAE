@@ -42,6 +42,8 @@ function getDefaults(){
 		cspFile: '/csp.json',
 		//File where updated CSP will be stored.
 		newCspFile: '/newcsp.json',
+		useLocalhostAsSelf : true,
+		useNameAsSelf : undefined,
 		//File to store csp reports in.
 		cspReportsLog : '/cspReports.log',
 		// OTHER LOGS
@@ -216,6 +218,8 @@ function configureCspReport(app, opt, cspopt){
 	
 	var cspup = updateCSP({
 		"env" : app.get('env'),
+		useLocalhostAsSelf : opt["useLocalhostAsSelf"],
+		useNameAsSelf : opt["useNameAsSelf"],
 		"filename" : path.join(opt["projectPath"],opt["newCspFile"])
 	});
 
