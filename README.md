@@ -104,28 +104,21 @@ function(req,res){
 
 ### reportRoute (String, Optional)
 Default value: `'/reporting'`
-Route that is used to acquire various reports most notably Content Security Policy Reports.
-This route is excluded from any form of build in authentication so there is no need to add this route to the `excludeSessionAuthRoutes` option.
+Route that is used to acquire various reports most notably Content Security Policy Reports. This route is excluded from any form of build in authentication so there is no need to add this route to the `excludeSessionAuthRoutes` option.
 
 ### cspReportOnly (Boolean, Optional)
 Default value: `false`
-Use CSP report-only mode if this setting is `true`.
-This is beneficial while testing and works very well with the [updateCsp](#updateCSP) mechanism.
-If this is true when the environment is not 'testing' or 'development' it will generate a warning.
-So don't forget to set it back to `false` when launching your application publicly. 
+Use CSP report-only mode if this setting is `true`. This is beneficial while testing and works very well with the [updateCsp](#updateCSP) mechanism. If this is true when the environment is not 'testing' or 'development' it will generate a warning. So don't forget to set it back to `false` when launching your application publicly. 
 
 ### proxyPrefix (String, Optional)
 Default value: `''`
-Prefix used in combination with the `reportRoute` URL. 
-If you're not behind a proxy you will never need this.
+Prefix used in combination with the `reportRoute` URL. If you're not behind a proxy you will never need this.
 
 ### cspFile (String, Optional)
 Default value: `'/csp.json'`
-File path relative to your project to a file describing your content security policy.
-Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) and/or the [updateCsp](#updateCsp) feature.
+File path relative to your project to a file describing your content security policy. Intended to work in combination with [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) and/or the [updateCsp](#updateCsp) feature.
 
-This file can also be manually created using the following template in a file.
-Don't forget to remove the directives you don't need because a more specific directive will override a more general one.
+This file can also be manually created using the following template in a file. Don't forget to remove the directives you don't need because a more specific directive will override a more general one.
 ```JavaScript
 {
     "default-src": [],
@@ -142,9 +135,7 @@ Don't forget to remove the directives you don't need because a more specific dir
 ```
 ### newCspFile (String, Optional)
 Default value: `'/newcsp.json'`
-File path relative to your project to a file that will be created when using the [updateCSP](#updateCSP) feature.
-Before using this file as your CSP verify that it is as restrictive as possible.
-Do *NOT* use a newCspFile file that has been generated in a *PRODUCTION* environment as it may lead to whitelisting an actual attack!
+File path relative to your project to a file that will be created when using the [updateCSP](#updateCSP) feature. Before using this file as your CSP verify that it is as restrictive as possible. Do *NOT* use a newCspFile file that has been generated in a *PRODUCTION* environment as it may lead to whitelisting an actual attack!
 
 ### useLocalhostAsSelf (Boolean, Optional)
 Default value: `true`
@@ -152,8 +143,7 @@ Determines whether the [updateCSP](#updateCSP) mechanism will interpret `localho
 
 ### useNameAsSelf (String, Optional)
 Default value: `undefined`
-If the string in this setting is found as an origin to add to the newCspFile `'self'` will be used instead.
-This is useful if you can't use `useLocalhostAsSelf`(because you are using vhosts for example) and still want the generic `'self'` in your CSP.
+If the string in this setting is found as an origin to add to the newCspFile `'self'` will be used instead. This is useful if you can't use `useLocalhostAsSelf`(because you are using vhosts for example) and still want the generic `'self'` in your CSP.
 
 ### cspReportsLog (String, Optional)
 Default value: `'/cspReports.log'`
@@ -180,13 +170,11 @@ File path relative to your project to the file where possible XSRF attacks shoul
 Default value: `true`
 Determines whether to exclude the root path "/" from the session authentication mechanism.
 Only the "/" path is excluded when true for obvious reasons. NOT "/somethinghere" nor "/some/thing/here".
-We assume that "/" is often used as public entry point for the web application that's why the default value is `true`.
-Setting this to false would result in making your application inaccessible to anyone without a valid session unless you excluded other routes with the `excludeSessionAuthRoutes` option described next.
+We assume that "/" is often used as public entry point for the web application that's why the default value is `true`. Setting this to false would result in making your application inaccessible to anyone without a valid session unless you excluded other routes with the `excludeSessionAuthRoutes` option described next.
 
 ### excludeSessionAuthRoutes ([String], Optional)
 Default value: `[]`
-Other routes to exclude from the session authentication mechanism. Login route, register route and any resources that should be accessible without a valid session should be excluded.
-If you exclude for example `"/login"` all paths starting with `"/login/"` will ALSO be excluded from authentication. E.g. `"/login/admin"` and  `"/login/some/thing/here"` will be accessible without a valid session. 
+Other routes to exclude from the session authentication mechanism. Login route, register route and any resources that should be accessible without a valid session should be excluded. If you exclude for example `"/login"` all paths starting with `"/login/"` will ALSO be excluded from authentication. E.g. `"/login/admin"` and  `"/login/some/thing/here"` will be accessible without a valid session. 
 
 ### sessionIdleTimeout (Integer, Optional)
 Default value: `1200`
@@ -202,35 +190,15 @@ Time in seconds after which a session will certainly expire. A session can no lo
 
 ### secureCookie (Boolean, Optional)
 Default value: `true`
-Forces to only allow the session cookies to be used over a https connection.
-You really should be using HTTPS even just with some free certificate like [StartSSL Free](https://www.startssl.com/?app=1) or [Let's Encrypt](https://letsencrypt.org/) when it goes live.
-If you don't use HTTPS remember that everything will be send in plaintext: passwords, sensitive information, ...!!
+Forces to only allow the session cookies to be used over a https connection. You really should be using HTTPS even just with some free certificate like [StartSSL Free](https://www.startssl.com/?app=1) or [Let's Encrypt](https://letsencrypt.org/) when it goes live. If you don't use HTTPS remember that everything will be send in plaintext: passwords, sensitive information, ...!!
 
 ### cookiePath (Boolean, Optional)
 Default value: `'/'`
-The path on which the client-session cookie will be used.
-Making this path as restrictive as possible is good practice.
-This means that if you only serve authenticated users from a '/secretive' path you should set this setting to only be included when the URL contains that path.
+The path on which the client-session cookie will be used. Making this path as restrictive as possible is good practice. This means that if you only serve authenticated users from a '/secretive' path you should set this setting to only be included when the URL contains that path.
 
-### clientSessionOpt (Object, Optional)
-Default value: 
-```JavaScript
-{ // opt.name indicates the library option with that name
-	cookieName : 'csession',
-	secret : 'key stored in opt.keyPath'
-	duration: opt.sessionIdleTimeout*1000, 
-	activeDuration: opt.sessionIdleTimeout*500, 
-	cookie: 
-		{
-			path:opt.cookiePath,  
-			secure: opt.secureCookie,
-			httpOnly: true,
-			ephemeral: true 
-		}
-}
-```
-Object to be used as options for [node-client-sessions](https://github.com/mozilla/node-client-sessions).
-As `secret` option by default the key stored in `keyPath` is used. It's NOT recommended to set this object yourself unless you really know what you are doing with relation to secure session management.
+### disableCsessionSizeWarning (Boolean, Optional) 
+Default value: `false`
+If set to true this setting disables the logging of a size warning if the csession cookie is becoming exessivly large (> 2kb).
 
 ### disableJSONPrefixing (Boolean, Optional)
 Default value: `false`
@@ -347,10 +315,8 @@ For any issues check the [grunt-csp-express page](https://www.npmjs.com/package/
 
 ## UpdateCSP
 The SAE library includes a feature to help you build a CSP incrementally.
-You can start with no CSP file, one generated by [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) or your own manual configuration.
-This feature is tested with both Firefox and Chrome.
-Because the csp-reports generated by Chrome contain slightly more information I got the most restrictive (best) results while using Chrome.
-To use this feature the following steps should be undertaken. Pay close attention to the warnings!
+You can start with no CSP file, one generated by [grunt-csp-express](https://www.npmjs.com/package/grunt-csp-express) or your own manual configuration. This feature is tested with both Firefox and Chrome. Because the csp-reports generated by Chrome contain slightly more information I got the most restrictive (best) results while using Chrome. 
+To use this feature the following steps should be undertaken, pay close attention to the warnings!
 
 1. Ensure that you are in a development or testing environment. It's not advised to use this while your website is live because this can lead to accidentally whitelisting an actual attack. 
 2. In a shell on your development/testing machine run 
@@ -369,13 +335,9 @@ If `useNameAsSelf` is set it will replace origins that contain `useNameAsSelf` w
 
 ## Viewing logs with Bunyan
 
-All the logs are created with [Bunyan](https://github.com/trentm/node-bunyan) to be able to log in a structured way.
-Viewing the logs in a nice format is very easy by using the Bunyan cli tool.
-Install it first via npm:
+All the logs are created with [Bunyan](https://github.com/trentm/node-bunyan) to be able to log in a structured way. Viewing the logs in a nice format is very easy by using the Bunyan cli tool. Install it first via npm:
 `npm install -g bunyan`
-Next you can easily view any logs by using the tool in the terminal.
-e.g. `bunyan csession.log` or `bunyan cspReports.log`.
-For more infromation run `bunyan -h` or check out [this section of the Bunyan README](https://github.com/trentm/node-bunyan#cli-usage).
+Next you can easily view any logs by using the tool in the terminal. e.g. `bunyan csession.log` or `bunyan cspReports.log`. For more infromation run `bunyan -h` or check out [this section of the Bunyan README](https://github.com/trentm/node-bunyan#cli-usage).
 
 ## Q&A
 
