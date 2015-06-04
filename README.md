@@ -78,6 +78,8 @@ At your logout **POST** route:
 - Uses [dont-sniff-mimetype](https://github.com/helmetjs/dont-sniff-mimetype) by default.
 - Denies frame/iframe inclusion by default (click-jacking protection) with [frameguard](https://github.com/helmetjs/frameguard).
 
+*NOTE : All default settings are meant to be as secure as possible and are consciously set to follow OWASP guidelines. Do not change optional settings just because you can because it will very likely reduce your security!*
+
 ## Library Options
 
 ### projectPath (String, REQUIRED)
@@ -96,7 +98,7 @@ A function that gets executed when a request is not properly authenticated.
 Example
 ```JavaScript
 function(req,res){
-	//Calling next() here is NOT a good idea.
+	//Calling next() here is NOT a good idea!
 	res.redirect("/login");
 	return; 
 }
