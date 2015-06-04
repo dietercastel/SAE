@@ -2,8 +2,6 @@
 
 SAE is a [Node.js](https://nodejs.org) module to ease the development of a *secure* [Express](http://expressjs.com/)+[AngularJS](https://angularjs.org/) web application. AngularJS provides a couple of nice features that raise the security bar significantly. This module tries to make good use of these features with as little effort as possible for developers. It also adds some additional (in-depth) security measures. The focus of this module is client-side web security it does NOT cover various server-side risks.
 
-Version 1.0 was developed as part of my master thesis at the [Computer Science Department](https://wms.cs.kuleuven.be/) of [KULeuven](http://www.kuleuven.be/kuleuven/). Promoters for this thesis were [Prof. dr. ir. F. Piessens](https://distrinet.cs.kuleuven.be/people/frank) and [Dr. ir. L. Desmet](https://distrinet.cs.kuleuven.be/people/lieven). The assistant for the thesis was [Dr. P. De Ryck](https://distrinet.cs.kuleuven.be/people/philippe).
-
 ## Quick start
 At the very least you need to do three things:
 ### 1. Configure and include the SAE module
@@ -362,3 +360,6 @@ The updated CSP file could allow malicious resources by accident. It makes use o
 
 ### Why can't I use inline scripts and CSS when using CSP?
 Because there is no way trivial way the browser can tell inline scripts apart from malicious injections. CSP does in fact support hash/nonce values to allow them and still be able to verify these resources. But for new applications this is not advised that's why I choose not to support it in SAE. Inline scripting/styling is also considered bad practice and should therefore be avoided!
+
+#Acknowledgements
+Version 1.0 was developed as part of my master thesis at the [Computer Science Department](https://wms.cs.kuleuven.be/) of [KULeuven](http://www.kuleuven.be/kuleuven/). Promoters for this thesis were [Prof. dr. ir. F. Piessens](https://distrinet.cs.kuleuven.be/people/frank) and [Dr. ir. L. Desmet](https://distrinet.cs.kuleuven.be/people/lieven). The assistant for the thesis was [Dr. P. De Ryck](https://distrinet.cs.kuleuven.be/people/philippe).
