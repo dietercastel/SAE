@@ -4,7 +4,7 @@
   "description": "Module to aid in developing a secure express+angular webapplications. Focused on client-side web security vulnerabilities",
   "main": "SAE.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "grunt test"
   },
   "keywords": [
     "express",
