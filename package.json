@@ -10,7 +10,9 @@
     "express",
     "angular",
     "security",
-    "csp"
+    "csp",
+	"xsrf",
+	"xss"
   ],
   "author": "Dieter Castel",
   "license": "ISC",
