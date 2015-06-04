@@ -1,7 +1,7 @@
 {
   "name": "Sec-Angular-Express",
-  "version": "0.0.0",
-  "description": "Module to provide an easier secure setup for express+angular applications.",
+  "version": "1.0.0",
+  "description": "Module to aid in developing a secure express+angular webapplications. Focused on client-side web security vulnerabilities",
   "main": "SAE.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
