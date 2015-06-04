@@ -2,7 +2,7 @@
 
 SAE is a [Node.js](https://nodejs.org) module to ease the development of a *secure* [Express](http://expressjs.com/)+[AngularJS](https://angularjs.org/) web application. AngularJS provides a couple of nice features that raise the security bar significantly. This module tries to make good use of these features with as little effort as possible for developers. The focus of this module is client-side web security it does NOT cover various server-side risks.
 
-Version 1.0 was developed as part of my master thesis at the [Computer Science Department](https://wms.cs.kuleuven.be/) of [KULeuven](http://www.kuleuven.be/kuleuven/).
+Version 1.0 was developed as part of my master thesis at the [Computer Science Department](https://wms.cs.kuleuven.be/) of [KULeuven](http://www.kuleuven.be/kuleuven/). Promoters for this thesis were [Prof. dr. ir. F. Piessens](https://distrinet.cs.kuleuven.be/people/frank) and [Dr. ir. L. Desmet](https://distrinet.cs.kuleuven.be/people/lieven). The assistant for the thesis was [Dr. P. De Ryck](https://distrinet.cs.kuleuven.be/people/philippe).
 
 ## Quick start
 At the very least you need to do three things:
